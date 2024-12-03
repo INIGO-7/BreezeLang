@@ -8,9 +8,10 @@ void yyerror(const char *s);
 %}
 
 %union {
-    int iVal;
-    float fVal;
-    char* sVal;
+    int iVal;     // For integer values
+    float fVal;   // For float values
+    char* sVal;   // For string values (identifiers)
+    int type; ;   // for representing types (INT, FLOAT...)
 }
 
 %token <iVal> NUMBER
@@ -18,9 +19,10 @@ void yyerror(const char *s);
 %token <sVal> IDENTIFIER
 %token IF ELSE WHILE
 %token PLUS MINUS MUL DIV ASSIGN
+%token INT FLOAT_TYPE SEMICOLON
 
 %type <iVal> expr term factor
-
+%type <type> type /* Declaring 'type' to use 'type' field from %union */
 %%
 
 program     : statements
@@ -30,12 +32,15 @@ statements  : statement statements
             | /* empty */
             ;
 
-statement   : expr ';'
+statement   : expr SEMICOLON
             | IF expr '{' statements '}' ELSE '{' statements '}'
             | WHILE expr '{' statements '}'
-            | "int" IDENTIFIER ASSIGN expr ';'
-            | "float" IDENTIFIER ASSIGN expr ';'
-            | IDENTIFIER ASSIGN expr ';'
+            | type IDENTIFIER ASSIGN expr SEMICOLON  /* Match the 'int' keyword */
+            | IDENTIFIER ASSIGN expr SEMICOLON
+            ;
+
+type        : INT         { $$ = INT; }  /* Return the type */
+            | FLOAT_TYPE  { $$ = FLOAT_TYPE; }  /* Return the type for floats */
             ;
 
 expr        : expr PLUS term     { $$ = $1 + $3; }
@@ -57,7 +62,6 @@ factor      : IDENTIFIER         { $$ = 0; } /* you can define symbol table here
 %%
 
 int main(void) {
-    printf("Enter your code:\n");
     yyparse();
     return 0;
 }

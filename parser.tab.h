@@ -64,7 +64,10 @@ extern int yydebug;
     MINUS = 265,                   /* MINUS  */
     MUL = 266,                     /* MUL  */
     DIV = 267,                     /* DIV  */
-    ASSIGN = 268                   /* ASSIGN  */
+    ASSIGN = 268,                  /* ASSIGN  */
+    INT = 269,                     /* INT  */
+    FLOAT_TYPE = 270,              /* FLOAT_TYPE  */
+    SEMICOLON = 271                /* SEMICOLON  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -75,11 +78,12 @@ union YYSTYPE
 {
 #line 10 "parser.y"
 
-    int iVal;
-    float fVal;
-    char* sVal;
+    int iVal;     // For integer values
+    float fVal;   // For float values
+    char* sVal;   // For string values (identifiers)
+    int type; ;   // for representing types (INT, FLOAT...)
 
-#line 83 "parser.tab.h"
+#line 87 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

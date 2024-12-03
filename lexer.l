@@ -10,7 +10,10 @@ if          { return IF; }
 else        { return ELSE; }
 while       { return WHILE; }
 [ \t\n]     { /* ignore whitespace */ }
+int         { return INT; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.sVal = strdup(yytext); return IDENTIFIER; }
+"="         { return ASSIGN; }
+";"         { return SEMICOLON; }
 .           { return yytext[0]; }
 %%
 
