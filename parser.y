@@ -1,62 +1,64 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include "symtab.h"
 
 int yylex(void);
 void yyerror(const char *s);
-
 %}
 
 %union {
-    int iVal;     // For integer values
-    float fVal;   // For float values
-    char* sVal;   // For string values (identifiers)
-    int type; ;   // for representing types (INT, FLOAT...)
+    int number;
+    char* string;
 }
 
-%token <iVal> NUMBER
-%token <fVal> FLOAT
-%token <sVal> IDENTIFIER
-%token IF ELSE WHILE
-%token PLUS MINUS MUL DIV ASSIGN
-%token INT FLOAT_TYPE SEMICOLON
+%token <number> NUMBER
+%token <string> IDENTIFIER
+%token PRINT ASSIGN SEMICOLON
+%token PLUS MINUS MUL DIV
+%token OPENPAR CLOSEPAR
+%type <number> expr
 
-%type <iVal> expr term factor
-%type <type> type /* Declaring 'type' to use 'type' field from %union */
+%left PLUS MINUS
+%left MUL DIV
+
 %%
 
-program     : statements
+program     : { init_symbol_table(); } statements
             ;
 
 statements  : statement statements
             | /* empty */
             ;
 
-statement   : expr SEMICOLON
-            | IF expr '{' statements '}' ELSE '{' statements '}'
-            | WHILE expr '{' statements '}'
-            | type IDENTIFIER ASSIGN expr SEMICOLON  /* Match the 'int' keyword */
-            | IDENTIFIER ASSIGN expr SEMICOLON
+statement   : IDENTIFIER ASSIGN expr SEMICOLON {
+                put_symbol($1, $3);
+                free($1);
+            }
+            | PRINT expr SEMICOLON { printf("%d\n", $2); }
             ;
 
-type        : INT         { $$ = INT; }  /* Return the type */
-            | FLOAT_TYPE  { $$ = FLOAT_TYPE; }  /* Return the type for floats */
-            ;
-
-expr        : expr PLUS term     { $$ = $1 + $3; }
-            | expr MINUS term    { $$ = $1 - $3; }
-            | term               { $$ = $1; }
-            ;
-
-term        : term MUL factor    { $$ = $1 * $3; }
-            | term DIV factor    { $$ = $1 / $3; }
-            | factor             { $$ = $1; }
-            ;
-
-factor      : IDENTIFIER         { $$ = 0; } /* you can define symbol table here */
-            | NUMBER             { $$ = $1; }
-            | FLOAT              { $$ = $1; }
-            | '(' expr ')'       { $$ = $2; }
+expr        : expr PLUS expr    { $$ = $1 + $3; }
+            | expr MINUS expr   { $$ = $1 - $3; }
+            | expr MUL expr     { $$ = $1 * $3; }
+            | expr DIV expr     { 
+                if ( $3 == 0 )  {
+                    fprintf( stderr, "Error: Dvision by zero\n" );
+                    exit( EXIT_FAILURE );
+                }   
+                $$ = $1 / $3; 
+            }
+            | NUMBER            { $$ = $1; }
+            | IDENTIFIER        {
+                SymbolNode *node = lookup_symbol($1);
+                if (node == NULL) {
+                    yyerror("Undefined variable");
+                    $$ = 0;
+                } else {
+                    $$ = node->value;
+                }
+                free($1);
+            }
             ;
 
 %%
