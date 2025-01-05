@@ -4,7 +4,7 @@
 %}
 
 %%
-[0-9]+          { yylval.number = atoi(yytext); return NUMBER; }
+[1-9][0-9]*     { yylval.number = atoi(yytext); return NUMBER; }
 "print"         { return PRINT; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.string = strdup(yytext); return IDENTIFIER; }
 
@@ -12,6 +12,7 @@
 "-"             { return MINUS; }
 "/"             { return DIV; }
 "*"             { return MUL; }
+"**"            { return EXP; }
 
 "("             { return OPENPAR; }
 ")"             { return CLOSEPAR; }

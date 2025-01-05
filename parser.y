@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "symtab.h"
 
 int yylex(void);
@@ -15,7 +16,7 @@ void yyerror(const char *s);
 %token <number> NUMBER
 %token <string> IDENTIFIER
 %token PRINT ASSIGN SEMICOLON
-%token PLUS MINUS MUL DIV
+%token PLUS MINUS MUL DIV EXP
 %token OPENPAR CLOSEPAR
 
 /* Declare types for our new non-terminals */
@@ -23,7 +24,7 @@ void yyerror(const char *s);
 
 /* Operator precedence and associativity */
 %left PLUS MINUS
-%left MUL DIV
+%left MUL DIV EXP
 
 %%
 
@@ -56,6 +57,7 @@ term        : term MUL factor   { $$ = $1 * $3; }
                 }
                 $$ = $1 / $3; 
             }
+            | term EXP factor   { $$ = pow($1, $3); }
             | factor            { $$ = $1; }
             ;
 

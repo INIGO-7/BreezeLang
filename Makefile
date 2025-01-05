@@ -1,7 +1,7 @@
 # Compiler and flags
 CC = gcc
 CFLAGS = -Wall -Wextra -g
-LDFLAGS = -lfl
+LDFLAGS = -lfl -lm	# lm to link the math library
 
 # Project name
 TARGET = coolcompiler
