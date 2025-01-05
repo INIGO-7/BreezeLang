@@ -10,17 +10,19 @@ void yyerror(const char *s);
 
 %union {
     int number;
+    float decimal; 
     char* string;
 }
 
 %token <number> NUMBER
+%token <decimal> DECIMAL
 %token <string> IDENTIFIER
 %token PRINT ASSIGN SEMICOLON
 %token PLUS MINUS MUL DIV EXP
 %token OPENPAR CLOSEPAR
 
 /* Declare types for our new non-terminals */
-%type <number> expr term factor
+%type <decimal> expr term factor
 
 /* Operator precedence and associativity */
 %left PLUS MINUS
@@ -40,7 +42,7 @@ statement   : IDENTIFIER ASSIGN expr SEMICOLON {
                 free($1);
             }
             | PRINT expr SEMICOLON { 
-                printf("%d\n", $2); 
+                printf("%g\n", $2); 
             }
             ;
 
@@ -62,6 +64,7 @@ term        : term MUL factor   { $$ = $1 * $3; }
             ;
 
 factor      : NUMBER            { $$ = $1; }
+            | DECIMAL           { $$ = $1; }
             | IDENTIFIER        {
                 SymbolNode *node = lookup_symbol($1);
                 if (node == NULL) {

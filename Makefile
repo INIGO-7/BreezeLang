@@ -4,7 +4,7 @@ CFLAGS = -Wall -Wextra -g
 LDFLAGS = -lfl -lm	# lm to link the math library
 
 # Project name
-TARGET = coolcompiler
+TARGET = BreezeLangCompiler
 
 # Source files
 BISON_SRC = parser.y
