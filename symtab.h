@@ -5,7 +5,7 @@
 // A simple symbol table entry
 typedef struct SymbolNode {
     char *name;           // Variable name
-    int value;           // Variable value
+    float value;           // Variable value
     struct SymbolNode *next;
 } SymbolNode;
 
@@ -16,7 +16,7 @@ void init_symbol_table(void);
 SymbolNode *lookup_symbol(const char *name);
 
 // Insert or update a symbol
-SymbolNode *put_symbol(const char *name, int value);
+SymbolNode *put_symbol(const char *name, float value);
 
 // Print a symbol's value
 void print_symbol(const char *name);

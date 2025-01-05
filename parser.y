@@ -63,8 +63,8 @@ term        : term MUL factor   { $$ = $1 * $3; }
             | factor            { $$ = $1; }
             ;
 
-factor      : NUMBER            { $$ = $1; }
-            | DECIMAL           { $$ = $1; }
+factor      : DECIMAL           { $$ = $1; }
+            | NUMBER            { $$ = $1; }
             | IDENTIFIER        {
                 SymbolNode *node = lookup_symbol($1);
                 if (node == NULL) {

@@ -21,7 +21,7 @@ SymbolNode *lookup_symbol(const char *name) {
     return NULL;
 }
 
-SymbolNode *put_symbol(const char *name, int value) {
+SymbolNode *put_symbol(const char *name, float value) {
     // Check if symbol exists
     SymbolNode *node = lookup_symbol(name);
     
@@ -51,7 +51,7 @@ SymbolNode *put_symbol(const char *name, int value) {
 void print_symbol(const char *name) {
     SymbolNode *node = lookup_symbol(name);
     if (node != NULL) {
-        printf("%d", node->value);  // Just print the value
+        printf("%g", node->value);  // Just print the value
     } else {
         fprintf(stderr, "Error: Undefined variable '%s'\n", name);
     }
