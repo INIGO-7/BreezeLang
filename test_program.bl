@@ -1,6 +1,41 @@
-a = 1;
-b = 2;
-print a + b;
-print 4 / 2;
-c = 3 + 2 * 5;
-print c;
+x = 0.5;
+y = 2.5;
+z = x + y;
+print z;
+
+w = y - x;
+print w;
+
+a = x * y;
+print a;
+
+b = y / x;
+print b;
+
+is_true = true;
+is_false = false;
+print is_true;
+print is_false;
+print 1 == 1;
+print 1 == 0;
+
+print is_true and is_false;
+
+or_result = is_true or is_false;
+print or_result;
+
+not_result = not is_true;
+print not_result;
+
+# Combined boolean expressions
+complex_bool = (x < y) and (y > z);
+print complex_bool;
+
+another_bool = (x == 0.5) or (y == 0);
+print another_bool;
+
+mixed_result = (z > 1) and is_true;
+print mixed_result;
+
+edge_case = (y / 0.5 == 5.0) and (not is_false);
+print edge_case;
