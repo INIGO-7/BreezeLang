@@ -1,7 +1,5 @@
 %{
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include "common_lib.h"
 #include "symtab.h"
 
 int yylex(void);
@@ -12,21 +10,31 @@ void yyerror(const char *s);
     int number;
     float decimal; 
     char* string;
+    bool boolean;
 }
 
 %token <number> NUMBER
 %token <decimal> DECIMAL
 %token <string> IDENTIFIER
+%token TRUE FALSE
+%token AND OR NOT
+%token EQ NEQ LT GT LE GE
 %token PRINT ASSIGN SEMICOLON
 %token PLUS MINUS MUL DIV EXP
 %token OPENPAR CLOSEPAR
 
 /* Declare types for our new non-terminals */
+%type <boolean> bool_expr compar_expr
 %type <decimal> expr term factor
 
 /* Operator precedence and associativity */
 %left PLUS MINUS
 %left MUL DIV EXP
+%left OR
+%left AND
+%right NOT
+%left EQ NEQ
+%left LT LE GT GE
 
 %%
 
@@ -41,8 +49,15 @@ statement   : IDENTIFIER ASSIGN expr SEMICOLON {
                 put_symbol($1, $3);
                 free($1);
             }
+            | IDENTIFIER ASSIGN bool_expr SEMICOLON {
+                put_symbol($1, $3);
+                free($1);
+            }
             | PRINT expr SEMICOLON { 
-                printf("%g\n", $2); 
+                printf("%g\n", $2);
+            }
+            | PRINT bool_expr SEMICOLON {
+                printf("%s\n", $2 ? "true" : "false");
             }
             ;
 
@@ -79,6 +94,22 @@ factor      : DECIMAL           { $$ = $1; }
             | MINUS factor            { $$ = -$2; }  /* Handle unary minus */
             ;
 
+bool_expr   : TRUE                            { $$ = true; }
+            | FALSE                           { $$ = false; }
+            | bool_expr AND bool_expr         { $$ = $1 && $3; }
+            | bool_expr OR bool_expr          { $$ = $1 || $3; }
+            | NOT bool_expr                   { $$ = !$2; }
+            | compar_expr                     { $$ = $1; }
+            | OPENPAR bool_expr CLOSEPAR      { $$ = $2; }
+            ;
+
+compar_expr : expr EQ expr    { $$ = $1 == $3; }
+            | expr NEQ expr   { $$ = $1 != $3; }
+            | expr LT expr    { $$ = $1 < $3; }
+            | expr LE expr    { $$ = $1 <= $3; }
+            | expr GT expr    { $$ = $1 > $3; }
+            | expr GE expr    { $$ = $1 >= $3; }
+            ;
 %%
 
 int main(void) {

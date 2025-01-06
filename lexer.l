@@ -1,12 +1,25 @@
-%{
+%{  
+#include "common_lib.h"
 #include "parser.tab.h"
-#include <stdlib.h>
 %}
 
 %%
+"print"                   { return PRINT; }
+"true"                    { return TRUE; }
+"false"                   { return FALSE; }
+
+"&&"                      { return AND; }
+"||"                      { return OR; }
+"!"                       { return NOT; }
+"=="                      { return EQ; }
+"!="                      { return NEQ; }
+"<"                       { return LT; }
+"<="                      { return LE; }
+">"                       { return GT; }
+">="                      { return GE; }
+
 [1-9][0-9]*               { yylval.number = atof(yytext); return NUMBER; }
 ([1-9][0-9]*|0)\.[0-9]+   { yylval.decimal = atof(yytext); return DECIMAL; }
-"print"                   { return PRINT; }
 [a-zA-Z_][a-zA-Z0-9_]*    { yylval.string = strdup(yytext); return IDENTIFIER; }
 
 "+"                       { return PLUS; }
