@@ -5,5 +5,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
+#include <string.h>
+#include "ast.h"
+#include "symtab.h"
 
 #endif

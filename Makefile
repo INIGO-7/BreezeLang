@@ -1,3 +1,4 @@
+
 # Compiler and flags
 CC = gcc
 CFLAGS = -Wall -Wextra -g
@@ -9,7 +10,7 @@ TARGET = BreezeLangCompiler
 # Source files
 BISON_SRC = parser.y
 FLEX_SRC = lexer.l
-C_SOURCES = symtab.c
+C_SOURCES = symtab.c ast.c main.c
 GENERATED_SOURCES = lex.yy.c parser.tab.c
 ALL_SOURCES = $(C_SOURCES) $(GENERATED_SOURCES)
 
@@ -17,7 +18,7 @@ ALL_SOURCES = $(C_SOURCES) $(GENERATED_SOURCES)
 OBJECTS = $(ALL_SOURCES:.c=.o)
 
 # Header files
-HEADERS = symtab.h parser.tab.h
+HEADERS = symtab.h ast.h parser.tab.h
 
 # Default target
 all: $(TARGET)

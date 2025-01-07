@@ -1,6 +1,7 @@
 %{  
 #include "common_lib.h"
 #include "parser.tab.h"
+extern FILE *yyin;
 %}
 
 %%

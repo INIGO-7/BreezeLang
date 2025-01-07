@@ -1,16 +1,19 @@
 %{
 #include "common_lib.h"
-#include "symtab.h"
 
 int yylex(void);
 void yyerror(const char *s);
+
+astnode_t *root_ast;
 %}
 
 %union {
+    astnode_t *ast;
     int number;
     float decimal; 
     char* string;
     bool boolean;
+    bool bool_op_type;
 }
 
 %token <number> NUMBER
@@ -24,8 +27,7 @@ void yyerror(const char *s);
 %token OPENPAR CLOSEPAR
 
 /* Declare types for our new non-terminals */
-%type <boolean> bool_expr compar_expr
-%type <decimal> expr term factor
+%type <ast> stmt stmts expr term factor bool_expr compar_expr
 
 /* Operator precedence and associativity */
 %left PLUS MINUS
@@ -38,84 +40,168 @@ void yyerror(const char *s);
 
 %%
 
-program     : { init_symbol_table(); } statements
+program     : stmts { init_symbol_table(); root_ast = $1; }
             ;
 
-statements  : statement statements
-            | /* empty */
+stmts       : stmt {
+              $$ = astnode_new(NODE_STMTS);
+              astnode_add_child($$, $1, 0);
+            }
+            | stmts stmt {
+              $$ = astnode_new(NODE_STMTS);
+              astnode_add_child($$, $1, 0);
+              astnode_add_child($$, $2, 1);
+            }
             ;
 
-statement   : IDENTIFIER ASSIGN expr SEMICOLON {
-                put_symbol($1, $3);
-                free($1);
+stmt        : IDENTIFIER ASSIGN expr SEMICOLON {
+                $$ = astnode_new(NODE_ASSIGN);
+                $$->val.id = $1;
+                astnode_add_child($$, $3, 0);
             }
             | IDENTIFIER ASSIGN bool_expr SEMICOLON {
-                put_symbol($1, $3);
-                free($1);
+                $$ = astnode_new(NODE_ASSIGN);
+                $$->val.id = $1;
+                astnode_add_child($$, $3, 0);
             }
-            | PRINT expr SEMICOLON { 
-                printf("%g\n", $2);
+            | PRINT expr SEMICOLON {
+                $$ = astnode_new(NODE_PRINT);
+                astnode_add_child($$, $2, 0);
             }
             | PRINT bool_expr SEMICOLON {
-                printf("%s\n", $2 ? "true" : "false");
+                $$ = astnode_new(NODE_PRINT);
+                astnode_add_child($$, $2, 0);
             }
             ;
 
-expr        : expr PLUS term    { $$ = $1 + $3; }
-            | expr MINUS term   { $$ = $1 - $3; }
+expr        : expr PLUS term    { 
+                $$ = astnode_new(NODE_ADD);
+                astnode_add_child($$, $1, 0);
+                astnode_add_child($$, $3, 1);
+            }
+            | expr MINUS term   { 
+                $$ = astnode_new(NODE_SUB);
+                astnode_add_child($$, $1, 0);
+                astnode_add_child($$, $3, 1);
+            }
             | term              { $$ = $1; }
             ;
 
-term        : term MUL factor   { $$ = $1 * $3; }
+term        : term MUL factor   { 
+                $$ = astnode_new(NODE_MUL);
+                astnode_add_child($$, $1, 0);
+                astnode_add_child($$, $3, 1);
+            }
             | term DIV factor   { 
                 if ($3 == 0) {
                     fprintf(stderr, "Error: Division by zero\n");
                     exit(EXIT_FAILURE);
                 }
-                $$ = $1 / $3; 
+                $$ = astnode_new(NODE_DIV);
+                astnode_add_child($$, $1, 0);
+                astnode_add_child($$, $3, 1);
             }
-            | term EXP factor   { $$ = pow($1, $3); }
+            | term EXP factor   { 
+                $$ = astnode_new(NODE_EXP);
+                astnode_add_child($$, $1, 0);
+                astnode_add_child($$, $3, 1);
+            }
             | factor            { $$ = $1; }
             ;
 
-factor      : DECIMAL           { $$ = $1; }
-            | NUMBER            { $$ = $1; }
+factor      : DECIMAL           { 
+                $$ = astnode_new(NODE_NUM);
+                $$->val.decimal = $1;
+            }
+            | NUMBER            { 
+                $$ = astnode_new(NODE_NUM);
+                $$->val.num = $1;
+            }
             | IDENTIFIER        {
-                SymbolNode *node = lookup_symbol($1);
-                if (node == NULL) {
-                    yyerror("Undefined variable");
-                    $$ = 0;
-                } else {
-                    $$ = node->value;
-                }
-                free($1);
+                $$ = astnode_new(NODE_ID);
+                $$->val.id = $1;
             }
             | OPENPAR expr CLOSEPAR   { $$ = $2; }
-            | MINUS factor            { $$ = -$2; }  /* Handle unary minus */
+            | MINUS factor            { 
+                $$ = astnode_new(NODE_NUM);
+
+                if ($2->type == NODE_NUM) {
+                    if ($2->val.num) {
+                        $$->val.num = -($2->val.num);
+                    } else {
+                        $$->val.decimal = -($2->val.decimal);
+                    }
+                }
+            }  /* Handle unary minus */
             ;
 
-bool_expr   : TRUE                            { $$ = true; }
-            | FALSE                           { $$ = false; }
-            | bool_expr AND bool_expr         { $$ = $1 && $3; }
-            | bool_expr OR bool_expr          { $$ = $1 || $3; }
-            | NOT bool_expr                   { $$ = !$2; }
+bool_expr   : TRUE                            { 
+                $$ = astnode_new(NODE_BOOL);
+                $$->val.boolean = true;
+            }
+            | FALSE                           { 
+                $$ = astnode_new(NODE_BOOL);
+                $$->val.boolean = false;
+            }
+            | bool_expr AND bool_expr         { 
+                $$ = astnode_new(NODE_BOOL_OP);
+                $$->val.bool_op_type = strdup("and");
+                astnode_add_child($$, $1, 0);
+                astnode_add_child($$, $3, 1);
+            }
+            | bool_expr OR bool_expr          { 
+                $$ = astnode_new(NODE_BOOL_OP);
+                $$->val.bool_op_type = strdup("or");
+                astnode_add_child($$, $1, 0);
+                astnode_add_child($$, $3, 1);
+            }
+            | NOT bool_expr                   { 
+                $$ = astnode_new(NODE_BOOL_OP);
+                $$->val.bool_op_type = strdup("not");
+                astnode_add_child($$, $2, 0);
+            }
             | compar_expr                     { $$ = $1; }
             | OPENPAR bool_expr CLOSEPAR      { $$ = $2; }
             ;
 
-compar_expr : expr EQ expr    { $$ = $1 == $3; }
-            | expr NEQ expr   { $$ = $1 != $3; }
-            | expr LT expr    { $$ = $1 < $3; }
-            | expr LE expr    { $$ = $1 <= $3; }
-            | expr GT expr    { $$ = $1 > $3; }
-            | expr GE expr    { $$ = $1 >= $3; }
+compar_expr : expr EQ expr    { 
+                $$ = astnode_new(NODE_BOOL_OP);
+                $$->val.bool_op_type = strdup("eq");
+                astnode_add_child($$, $1, 0);
+                astnode_add_child($$, $3, 1);
+            }
+            | expr NEQ expr   { 
+                $$ = astnode_new(NODE_BOOL_OP);
+                $$->val.bool_op_type = strdup("neq");
+                astnode_add_child($$, $1, 0);
+                astnode_add_child($$, $3, 1);
+            }
+            | expr LT expr    {
+                $$ = astnode_new(NODE_BOOL_OP);
+                $$->val.bool_op_type = strdup("lt");
+                astnode_add_child($$, $1, 0);
+                astnode_add_child($$, $3, 1);
+            }
+            | expr LE expr    {
+                $$ = astnode_new(NODE_BOOL_OP);
+                $$->val.bool_op_type = strdup("le");
+                astnode_add_child($$, $1, 0);
+                astnode_add_child($$, $3, 1);
+            }
+            | expr GT expr    {
+                $$ = astnode_new(NODE_BOOL_OP);
+                $$->val.bool_op_type = strdup("gt");
+                astnode_add_child($$, $1, 0);
+                astnode_add_child($$, $3, 1);
+            }
+            | expr GE expr    {
+                $$ = astnode_new(NODE_BOOL_OP);
+                $$->val.bool_op_type = strdup("ge");
+                astnode_add_child($$, $1, 0);
+                astnode_add_child($$, $3, 1);
+            }
             ;
 %%
-
-int main(void) {
-    yyparse();
-    return 0;
-}
 
 void yyerror(const char *s) {
     fprintf(stderr, "Error: %s\n", s);
