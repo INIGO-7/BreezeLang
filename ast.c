@@ -39,6 +39,7 @@ void print_ast(astnode_t *node, int depth) {
         case NODE_SUB: printf("SUB\n"); break;
         case NODE_MUL: printf("MUL\n"); break;
         case NODE_DIV: printf("DIV\n"); break;
+        case NODE_EXP: printf("EXP\n"); break;
         case NODE_PRINT: printf("PRINT\n"); break;
         case NODE_BOOL_OP: printf("BOOL_OP\n"); break;
         case NODE_BOOL: printf("BOOL: %s\n", node->val.boolean ? "true" : "false"); break;
@@ -152,6 +153,11 @@ static float evaluate_expr(astnode_t *node) {
                 exit(EXIT_FAILURE);
             }
             return left / right;
+
+        case NODE_EXP:
+            left = evaluate_expr(node->child[0]);
+            right = evaluate_expr(node->child[1]);
+            return pow(left, right);
 
         case NODE_BOOL:
             return node->val.boolean ? false : true;
