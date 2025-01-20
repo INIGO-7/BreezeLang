@@ -24,6 +24,7 @@ extern FILE *yyin;
 [0-9]+\.[0-9]+            { yylval.decimal = atof(yytext); return DECIMAL; }
 [0-9]+                    { yylval.number = atoi(yytext); return NUMBER; }
 [a-zA-Z_][a-zA-Z0-9_]*    { yylval.string = strdup(yytext); return IDENTIFIER; }
+\"[^\"]*\"                { yylval.string = strdup(yytext); return STRING; }
 
 "+"                       { return PLUS; }
 "-"                       { return MINUS; }
@@ -37,10 +38,10 @@ extern FILE *yyin;
 "="                       { return ASSIGN; }
 ";"                       { return SEMICOLON; }
 
-\/\*[a-zA-Z_][a-zA-Z0-9_]*\*\/    { yylval.string = strdup(yytext; return COMMENT) }
-
-"[a-zA-Z_][a-zA-Z0-9_]*"  { /* ignore comments */  }
+\/\*[^*]*\*+([^/*][^*]*\*+)*\/    { /* ignore block comments */ }
+"//".*                            { /* ignore single line comments */ }
 [ \t\n]                   { /* ignore whitespace */ }
+
 .                         { fprintf(stderr, "Error: Unexpected character '%s'\n", yytext); return yytext[0]; }
 %%
 
