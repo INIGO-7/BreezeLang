@@ -7,6 +7,8 @@ void yyerror(const char *s);
 astnode_t *root_ast;
 %}
 
+%debug
+
 %union {
     astnode_t *ast;
     int number;
@@ -109,13 +111,13 @@ term        : term MUL factor   {
             | factor            { $$ = $1; }
             ;
 
-factor      : DECIMAL           { 
-                $$ = astnode_new(NODE_NUM);
-                $$->val.decimal = $1;
-            }
-            | NUMBER            { 
+factor      : NUMBER            { 
                 $$ = astnode_new(NODE_NUM);
                 $$->val.num = $1;
+            }
+            | DECIMAL           { 
+                $$ = astnode_new(NODE_DEC);
+                $$->val.decimal = $1;
             }
             | IDENTIFIER        {
                 $$ = astnode_new(NODE_ID);
@@ -127,7 +129,7 @@ factor      : DECIMAL           {
 
                 if ($2->type == NODE_NUM) {
                     if ($2->val.num) {
-                        $$->val.num = -($2->val.num);
+                       $$->val.num = -($2->val.num);
                     } else {
                         $$->val.decimal = -($2->val.decimal);
                     }
@@ -142,6 +144,10 @@ bool_expr   : TRUE                            {
             | FALSE                           { 
                 $$ = astnode_new(NODE_BOOL);
                 $$->val.boolean = false;
+            }
+            | IDENTIFIER {
+                $$ = astnode_new(NODE_ID);
+                $$->val.id = $1;
             }
             | bool_expr AND bool_expr         { 
                 $$ = astnode_new(NODE_BOOL_OP);
@@ -161,7 +167,11 @@ bool_expr   : TRUE                            {
                 astnode_add_child($$, $2, 0);
             }
             | compar_expr                     { $$ = $1; }
-            | OPENPAR bool_expr CLOSEPAR      { $$ = $2; }
+            | OPENPAR bool_expr CLOSEPAR      { $$ = $2; }            
+            | expr                            { /*expr to handle bool id case*/
+                $$ = astnode_new(NODE_BOOL);
+                astnode_add_child($$, $1, 0);
+            }
             ;
 
 compar_expr : expr EQ expr    { 
@@ -202,7 +212,8 @@ compar_expr : expr EQ expr    {
             }
             ;
 %%
-
 void yyerror(const char *s) {
-    fprintf(stderr, "Error: %s\n", s);
+    extern char *yytext;
+    extern int yylineno;
+    fprintf(stderr, "Error: %s at line %d, near token '%s'\n", s, yylineno, yytext);
 }

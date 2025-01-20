@@ -6,6 +6,7 @@
 extern int yyparse(void);
 extern astnode_t *root_ast;
 extern FILE *yyin;
+extern int yydebug;
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -19,6 +20,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    yydebug = 1;
     yyin = file; // Set the input file for Flex
     if (yyparse() == 0) {
         printf("Parsing completed successfully.\n");

@@ -16,6 +16,7 @@ enum NodeType {
     NODE_DIV,
     NODE_EXP,
     NODE_NUM,
+    NODE_DEC,
     NODE_ID,
     NODE_PRINT,
     NODE_BOOL_OP,

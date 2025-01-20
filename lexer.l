@@ -4,6 +4,8 @@
 extern FILE *yyin;
 %}
 
+%option yylineno
+
 %%
 "print"                   { return PRINT; }
 "true"                    { return TRUE; }
@@ -19,8 +21,8 @@ extern FILE *yyin;
 ">"                       { return GT; }
 ">="                      { return GE; }
 
-[1-9][0-9]*               { yylval.number = atof(yytext); return NUMBER; }
-([1-9][0-9]*|0)\.[0-9]+   { yylval.decimal = atof(yytext); return DECIMAL; }
+[0-9]+\.[0-9]+           { yylval.decimal = atof(yytext); return DECIMAL; }
+[0-9]+                   { yylval.number = atoi(yytext); return NUMBER; }
 [a-zA-Z_][a-zA-Z0-9_]*    { yylval.string = strdup(yytext); return IDENTIFIER; }
 
 "+"                       { return PLUS; }
