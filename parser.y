@@ -20,7 +20,7 @@ astnode_t *root_ast;
 
 %token <number> NUMBER
 %token <decimal> DECIMAL
-%token <string> IDENTIFIER
+%token <string> IDENTIFIER STRING
 %token TRUE FALSE
 %token AND OR NOT
 %token EQ NEQ LT GT LE GE
@@ -118,6 +118,10 @@ factor      : NUMBER            {
             | DECIMAL           { 
                 $$ = astnode_new(NODE_DEC);
                 $$->val.decimal = $1;
+            }
+            | STRING            {
+                $$ = astnode_new(NODE_STRING);
+                $$->val.string = strdup($1);
             }
             | IDENTIFIER        {
                 $$ = astnode_new(NODE_ID);

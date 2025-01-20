@@ -1,4 +1,4 @@
-print 5;
+/* Arithmetic operations */
 x = 0.5;
 y = 2.5;
 z = x + y;
@@ -13,6 +13,7 @@ print a;
 b = y / x;
 print b;
 
+/* boolean operations */
 is_true = true;
 is_false = false;
 print is_true;
@@ -28,6 +29,7 @@ print or_result;
 not_result = !is_true;
 print not_result;
 
+/* complex boolean operations */
 complex_bool = (x < y) && (y > z);
 print complex_bool;
 
@@ -39,3 +41,8 @@ print mixed_result;
 
 edge_case = (y / 0.5 == 5.0) && (! is_false);
 print edge_case;
+
+/* Strings */
+print "Hello world!";
+str_var = "This is my first string variable";
+print str_var;

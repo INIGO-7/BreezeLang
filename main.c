@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    yydebug = 1;
+    yydebug = 0;
     yyin = file; // Set the input file for Flex
     if (yyparse() == 0) {
         printf("Parsing completed successfully.\n");
@@ -30,8 +30,10 @@ int main(int argc, char *argv[]) {
 
     fclose(file);
 
+    /*
     printf("\nScript's Abstract Syntax Tree:\n");
     print_ast(root_ast, 0);
+    */
 
     printf("\nBreezeLang script output: \n");
     evaluate_ast(root_ast);

@@ -1,7 +1,28 @@
 #include "ast.h"
-#include "symtab.h"
 #include <stdbool.h>
 #include <string.h>
+
+// Helper functions' implementation
+Value create_float_value(float f) {
+  Value v;
+  v.type = TYPE_FLOAT;
+  v.data.float_val = f;
+  return v;
+}
+
+Value create_int_value(int i) {
+  Value v;
+  v.type = TYPE_INT;
+  v.data.int_val = i;
+  return v;
+}
+
+Value create_string_value(const char* s) {
+  Value v;
+  v.type = TYPE_STRING;
+  v.data.str_val = strdup(s);
+  return v;
+}
 
 // Create a new AST node
 astnode_t *astnode_new(int type) {
@@ -43,6 +64,7 @@ void print_ast(astnode_t *node, int depth) {
     case NODE_PRINT: printf("PRINT\n"); break;
     case NODE_BOOL_OP: printf("BOOL_OP\n"); break;
     case NODE_BOOL: printf("BOOL: %s\n", node->val.boolean ? "true" : "false"); break;
+    case NODE_STRING: printf("STRING: %s\n", node->val.str); break; 
     default: printf("UNKNOWN NODE\n");
   }
 
@@ -92,16 +114,19 @@ void evaluate_ast(astnode_t *node) {
     case NODE_ASSIGN:
       // Evaluate right-hand side and store in symbol table
       if (node->child[0]) {
-        float value = evaluate_expr(node->child[0]);
-        put_symbol(node->val.id, value);
+        Value value = evaluate_expr(node->child[0]);
+        if (value.type == TYPE_FLOAT) put_symbol_float(node->val.id, value->data);
+        else if (value.type == TYPE_INT) put_symbol_int(node->val.id, value->data);
+        else put_symbol_char(node->val.id, value->data);
       }
       break;
 
     case NODE_PRINT:
       // Evaluate and print the expression
       if (node->child[0]) {
-        float value = evaluate_expr(node->child[0]);
-        printf("%g\n", value);
+        Value value = evaluate_expr(node->child[0]);
+        if (value.type == (TYPE_FLOAT || TYPE_INT)) printf("%g\n", value->data);
+        else printf("%s\n", value->data);
       }
       break;
 
@@ -112,18 +137,22 @@ void evaluate_ast(astnode_t *node) {
   }
 }
 
-static float evaluate_expr(astnode_t *node) {
+static Value evaluate_expr(astnode_t *node) {
   if (!node) return false;
 
-  float left, right;
+  float result;
+  Value left, right;
   SymbolNode *symbol;
 
   switch (node->type) {
     case NODE_NUM:
-      return node->val.num;
+      return create_int_value(node->val.num)
 
     case NODE_DEC:
-      return node->val.decimal;
+      return create_float_value(node->val.decimal);
+
+    case NODE_STRING:
+      return create_string_value(node->val.str);
 
     case NODE_ID:
       symbol = lookup_symbol(node->val.id);
@@ -131,62 +160,108 @@ static float evaluate_expr(astnode_t *node) {
         fprintf(stderr, "Error: Undefined variable '%s'\n", node->val.id);
         exit(EXIT_FAILURE);
       }
-      return symbol->value;
+      return symbol->val;
 
     case NODE_ADD:
       left = evaluate_expr(node->child[0]);
       right = evaluate_expr(node->child[1]);
-      return left + right;
+      result = left->data + right->data;
+      
+      // Check if result has any decimal part
+      if (fmod(result, 1.0) == 0.0) {
+          return create_int_value((int)result);
+      } else {
+         return create_float_value(result);
+      }
 
     case NODE_SUB:
       left = evaluate_expr(node->child[0]);
       right = evaluate_expr(node->child[1]);
-      return left - right;
+      result = left->data - right->data;
+      
+      // Check if result has any decimal part
+      if (fmod(result, 1.0) == 0.0) {
+          return create_int_value((int)result);
+      } else {
+         return create_float_value(result);
+      }
 
     case NODE_MUL:
       left = evaluate_expr(node->child[0]);
       right = evaluate_expr(node->child[1]);
-      return left * right;
+      result = left->data * right->data;
+      
+      // Check if result has any decimal part
+      if (fmod(result, 1.0) == 0.0) {
+          return create_int_value((int)result);
+      } else {
+         return create_float_value(result);
+      }
 
     case NODE_DIV:
       left = evaluate_expr(node->child[0]);
       right = evaluate_expr(node->child[1]);
-      if (right == 0) {
+      if (right->data == 0) {
         fprintf(stderr, "Error: Division by zero\n");
         exit(EXIT_FAILURE);
       }
-      return left / right;
+      result = left->data / right->data;
+      
+      // Check if result has any decimal part
+      if (fmod(result, 1.0) == 0.0) {
+          return create_int_value((int)result);
+      } else {
+         return create_float_value(result);
+      }
 
     case NODE_EXP:
       left = evaluate_expr(node->child[0]);
       right = evaluate_expr(node->child[1]);
-      return pow(left, right);
+      result = pow(left->data, right->data);
+      
+      // Check if result has any decimal part
+      if (fmod(result, 1.0) == 0.0) {
+          return create_int_value((int)result);
+      } else {
+         return create_float_value(result);
+      }
 
     case NODE_BOOL:
-      return node->val.boolean ? false : true;
+      return create_int_value(
+        node->val.boolean ? false : true
+      );
 
     case NODE_BOOL_OP:
       left = evaluate_expr(node->child[0]);
       right = evaluate_expr(node->child[1]);
 
       if (strcmp(node->val.bool_op_type, "and") == 0)
-        return (left && right) ? true : false;
+        result = (left && right) ? true : false;
+        return create_int_value((int)result);
       else if (strcmp(node->val.bool_op_type, "or") == 0)
-        return (left || right) ? true : false;
+        result = (left || right) ? true : false;
+        return create_int_value((int)result);
       else if (strcmp(node->val.bool_op_type, "not") == 0)
-        return (!left) ? true : false;
+        result = (!left) ? true : false;
+        return create_int_value((int)result);
       else if (strcmp(node->val.bool_op_type, "eq") == 0)
-        return (left == right) ? true : false;
+        result = (left == right) ? true : false;
+        return create_int_value((int)result);
       else if (strcmp(node->val.bool_op_type, "neq") == 0)
-        return (left != right) ? true : false;
+        result = (left != right) ? true : false;
+        return create_int_value((int)result);
       else if (strcmp(node->val.bool_op_type, "lt") == 0)
-        return (left < right) ? true : false;
+        result = (left < right) ? true : false;
+        return create_int_value((int)result);
       else if (strcmp(node->val.bool_op_type, "le") == 0)
-        return (left <= right) ? true : false;
+        result = (left <= right) ? true : false;
+        return create_int_value((int)result);
       else if (strcmp(node->val.bool_op_type, "gt") == 0)
-        return (left > right) ? true : false;
+        result = (left > right) ? true : false;
+        return create_int_value((int)result);
       else if (strcmp(node->val.bool_op_type, "ge") == 0)
-        return (left >= right) ? true : false;
+        result = (left >= right) ? true : false;
+        return create_int_value((int)result);
 
     default:
       fprintf(stderr, "Error: Unknown node type in evaluation\n");
