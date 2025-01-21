@@ -1,6 +1,7 @@
 #include "ast.h"
 #include <stdbool.h>
 #include <string.h>
+#include <math.h>
 
 // Helper functions' implementation
 Value create_float_value(float f) {
@@ -17,7 +18,7 @@ Value create_int_value(int i) {
   return v;
 }
 
-Value create_string_value(const char* s) {
+Value create_str_value(const char* s) {
   Value v;
   v.type = TYPE_STRING;
   v.data.str_val = strdup(s);
@@ -96,10 +97,13 @@ void free_ast(astnode_t *node) {
 
 // ----------- EVALUATION FUNCTION -----------
 
-static float evaluate_expr(astnode_t *node);
+static Value evaluate_expr(astnode_t *node);
 
 void evaluate_ast(astnode_t *node) {
-  if (!node) return;
+  if (!node) {
+    fprintf(stderr, "Error: NULL pointer in evaluate_ast.\n");
+    exit(EXIT_FAILURE); 
+  }
 
   switch (node->type) {
     case NODE_STMTS:
@@ -113,11 +117,17 @@ void evaluate_ast(astnode_t *node) {
 
     case NODE_ASSIGN:
       // Evaluate right-hand side and store in symbol table
-      if (node->child[0]) {
-        Value value = evaluate_expr(node->child[0]);
-        if (value.type == TYPE_FLOAT) put_symbol_float(node->val.id, value->data);
-        else if (value.type == TYPE_INT) put_symbol_int(node->val.id, value->data);
-        else put_symbol_char(node->val.id, value->data);
+      Value value = evaluate_expr(node->child[0]);
+      switch(value.type) {
+        case TYPE_FLOAT:
+          put_symbol_float(node->val.id, value.data.float_val);
+          break;
+        case TYPE_INT:
+          put_symbol_int(node->val.id, value.data.int_val);
+          break;
+        case TYPE_STRING:
+          put_symbol_string(node->val.id, value.data.str_val);
+          break;
       }
       break;
 
@@ -125,8 +135,9 @@ void evaluate_ast(astnode_t *node) {
       // Evaluate and print the expression
       if (node->child[0]) {
         Value value = evaluate_expr(node->child[0]);
-        if (value.type == (TYPE_FLOAT || TYPE_INT)) printf("%g\n", value->data);
-        else printf("%s\n", value->data);
+        if (value.type == TYPE_FLOAT) printf("%f\n", value.data.float_val);
+        else if (value.type == TYPE_INT) printf("%d\n", value.data.int_val);
+        else if (value.type == TYPE_STRING) printf("%s\n", value.data.str_val);
       }
       break;
 
@@ -138,7 +149,11 @@ void evaluate_ast(astnode_t *node) {
 }
 
 static Value evaluate_expr(astnode_t *node) {
-  if (!node) return false;
+
+  if (!node) {
+    fprintf(stderr, "Error: NULL pointer in evaluate_expr.\n");
+    exit(EXIT_FAILURE); 
+  }
 
   float result;
   Value left, right;
@@ -146,13 +161,13 @@ static Value evaluate_expr(astnode_t *node) {
 
   switch (node->type) {
     case NODE_NUM:
-      return create_int_value(node->val.num)
+      return create_int_value(node->val.num);
 
     case NODE_DEC:
       return create_float_value(node->val.decimal);
 
     case NODE_STRING:
-      return create_string_value(node->val.str);
+      return create_str_value(node->val.str);
 
     case NODE_ID:
       symbol = lookup_symbol(node->val.id);
@@ -160,108 +175,149 @@ static Value evaluate_expr(astnode_t *node) {
         fprintf(stderr, "Error: Undefined variable '%s'\n", node->val.id);
         exit(EXIT_FAILURE);
       }
-      return symbol->val;
+      switch (symbol->type) {
+
+        case TYPE_STRING:
+          return create_str_value(symbol->data.string_val);
+        case TYPE_FLOAT:
+          return create_float_value(symbol->data.float_val);
+        case TYPE_INT:
+          return create_int_value(symbol->data.int_val);
+
+        default:
+          fprintf(stderr, "Error, the type of the variable isn't recognized\n");
+          exit(EXIT_FAILURE);
+      }
 
     case NODE_ADD:
       left = evaluate_expr(node->child[0]);
       right = evaluate_expr(node->child[1]);
-      result = left->data + right->data;
-      
-      // Check if result has any decimal part
-      if (fmod(result, 1.0) == 0.0) {
-          return create_int_value((int)result);
+
+      // Ensure both values are numeric (int or float)
+      if ((left.type == TYPE_STRING || right.type == TYPE_STRING)) {
+        fprintf(stderr, "Error: Cannot add string values\n");
+        exit(EXIT_FAILURE); // Exit or handle the error as appropriate
+      }
+
+      // Perform the addition and handle type promotion
+      if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
+        float left_val = (left.type == TYPE_FLOAT) ? left.data.float_val : (float)left.data.int_val;
+        float right_val = (right.type == TYPE_FLOAT) ? right.data.float_val : (float)right.data.int_val;
+        result = left_val + right_val;
+        return create_float_value(result);
+      } else if (left.type == TYPE_INT && right.type == TYPE_INT) {
+        int result = left.data.int_val + right.data.int_val;
+        return create_int_value(result);
       } else {
-         return create_float_value(result);
+        fprintf(stderr, "Error: Invalid types for addition\n");
+        exit(EXIT_FAILURE);
       }
 
     case NODE_SUB:
       left = evaluate_expr(node->child[0]);
       right = evaluate_expr(node->child[1]);
-      result = left->data - right->data;
-      
-      // Check if result has any decimal part
-      if (fmod(result, 1.0) == 0.0) {
-          return create_int_value((int)result);
+
+      if ((left.type == TYPE_STRING || right.type == TYPE_STRING)) {
+        fprintf(stderr, "Error: Cannot subtract string values\n");
+        exit(EXIT_FAILURE);
+      }
+
+      if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
+        float left_val = (left.type == TYPE_FLOAT) ? left.data.float_val : (float)left.data.int_val;
+        float right_val = (right.type == TYPE_FLOAT) ? right.data.float_val : (float)right.data.int_val;
+        result = left_val - right_val;
+        return create_float_value(result);
       } else {
-         return create_float_value(result);
+        int result = left.data.int_val - right.data.int_val;
+        return create_int_value(result);
       }
 
     case NODE_MUL:
       left = evaluate_expr(node->child[0]);
       right = evaluate_expr(node->child[1]);
-      result = left->data * right->data;
-      
-      // Check if result has any decimal part
-      if (fmod(result, 1.0) == 0.0) {
-          return create_int_value((int)result);
+
+      if ((left.type == TYPE_STRING || right.type == TYPE_STRING)) {
+        fprintf(stderr, "Error: Cannot multiply string values\n");
+        exit(EXIT_FAILURE);
+      }
+
+      if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
+        float left_val = (left.type == TYPE_FLOAT) ? left.data.float_val : (float)left.data.int_val;
+        float right_val = (right.type == TYPE_FLOAT) ? right.data.float_val : (float)right.data.int_val;
+        result = left_val * right_val;
+        return create_float_value(result);
       } else {
-         return create_float_value(result);
+        result = left.data.int_val * right.data.int_val;
+        return create_int_value((int)result);
       }
 
     case NODE_DIV:
       left = evaluate_expr(node->child[0]);
       right = evaluate_expr(node->child[1]);
-      if (right->data == 0) {
+
+      if ((left.type == TYPE_STRING || right.type == TYPE_STRING)) {
+        fprintf(stderr, "Error: Cannot divide string values\n");
+        exit(EXIT_FAILURE);
+      }
+
+      if ((right.type == TYPE_INT && right.data.int_val == 0) ||
+        (right.type == TYPE_FLOAT && right.data.float_val == 0.0)) {
         fprintf(stderr, "Error: Division by zero\n");
         exit(EXIT_FAILURE);
       }
-      result = left->data / right->data;
-      
-      // Check if result has any decimal part
-      if (fmod(result, 1.0) == 0.0) {
-          return create_int_value((int)result);
-      } else {
-         return create_float_value(result);
-      }
+
+      float left_val = (left.type == TYPE_FLOAT) ? left.data.float_val : (float)left.data.int_val;
+      float right_val = (right.type == TYPE_FLOAT) ? right.data.float_val : (float)right.data.int_val;
+      result = left_val / right_val;
+      return create_float_value(result);
 
     case NODE_EXP:
       left = evaluate_expr(node->child[0]);
       right = evaluate_expr(node->child[1]);
-      result = pow(left->data, right->data);
-      
-      // Check if result has any decimal part
-      if (fmod(result, 1.0) == 0.0) {
-          return create_int_value((int)result);
-      } else {
-         return create_float_value(result);
+
+      if ((left.type == TYPE_STRING || right.type == TYPE_STRING)) {
+        fprintf(stderr, "Error: Cannot exponentiate string values\n");
+        exit(EXIT_FAILURE);
       }
 
+      float base = (left.type == TYPE_FLOAT) ? left.data.float_val : (float)left.data.int_val;
+      float exponent = (right.type == TYPE_FLOAT) ? right.data.float_val : (float)right.data.int_val;
+      result = pow(base, exponent);
+      return create_float_value(result);
+
     case NODE_BOOL:
-      return create_int_value(
-        node->val.boolean ? false : true
-      );
+      return create_int_value(node->val.boolean ? 1 : 0);
 
     case NODE_BOOL_OP:
       left = evaluate_expr(node->child[0]);
+
+      if (strcmp(node->val.bool_op_type, "not") == 0) {
+        return create_int_value((!left.data.int_val) ? 1 : 0);
+      }
+
+      // Only evaluate right child for binary operations
       right = evaluate_expr(node->child[1]);
 
-      if (strcmp(node->val.bool_op_type, "and") == 0)
-        result = (left && right) ? true : false;
-        return create_int_value((int)result);
-      else if (strcmp(node->val.bool_op_type, "or") == 0)
-        result = (left || right) ? true : false;
-        return create_int_value((int)result);
-      else if (strcmp(node->val.bool_op_type, "not") == 0)
-        result = (!left) ? true : false;
-        return create_int_value((int)result);
-      else if (strcmp(node->val.bool_op_type, "eq") == 0)
-        result = (left == right) ? true : false;
-        return create_int_value((int)result);
-      else if (strcmp(node->val.bool_op_type, "neq") == 0)
-        result = (left != right) ? true : false;
-        return create_int_value((int)result);
-      else if (strcmp(node->val.bool_op_type, "lt") == 0)
-        result = (left < right) ? true : false;
-        return create_int_value((int)result);
-      else if (strcmp(node->val.bool_op_type, "le") == 0)
-        result = (left <= right) ? true : false;
-        return create_int_value((int)result);
-      else if (strcmp(node->val.bool_op_type, "gt") == 0)
-        result = (left > right) ? true : false;
-        return create_int_value((int)result);
-      else if (strcmp(node->val.bool_op_type, "ge") == 0)
-        result = (left >= right) ? true : false;
-        return create_int_value((int)result);
+      if (strcmp(node->val.bool_op_type, "and") == 0) {
+        return create_int_value((left.data.int_val && right.data.int_val) ? 1 : 0);
+      } else if (strcmp(node->val.bool_op_type, "or") == 0) {
+        return create_int_value((left.data.int_val || right.data.int_val) ? 1 : 0);
+      } else if (strcmp(node->val.bool_op_type, "eq") == 0) {
+        return create_int_value((left.data.int_val == right.data.int_val) ? 1 : 0);
+      } else if (strcmp(node->val.bool_op_type, "neq") == 0) {
+        return create_int_value((left.data.int_val != right.data.int_val) ? 1 : 0);
+      } else if (strcmp(node->val.bool_op_type, "lt") == 0) {
+        return create_int_value((left.data.int_val < right.data.int_val) ? 1 : 0);
+      } else if (strcmp(node->val.bool_op_type, "le") == 0) {
+        return create_int_value((left.data.int_val <= right.data.int_val) ? 1 : 0);
+      } else if (strcmp(node->val.bool_op_type, "gt") == 0) {
+        return create_int_value((left.data.int_val > right.data.int_val) ? 1 : 0);
+      } else if (strcmp(node->val.bool_op_type, "ge") == 0) {
+        return create_int_value((left.data.int_val >= right.data.int_val) ? 1 : 0);
+      } else {
+        fprintf(stderr, "Error: Unknown boolean operator\n");
+        exit(EXIT_FAILURE);
+      }
 
     default:
       fprintf(stderr, "Error: Unknown node type in evaluation\n");

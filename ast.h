@@ -3,25 +3,10 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+// Include ValueType and Value structures 
 #include "symtab.h"
 
 #define MAXCHILDREN 5
-
-// Implement different Types
-typedef enum {
-  VAL_FLOAT,
-  VAL_INT,
-  VAL_STRING
-} ValueType;
-
-typedef struct {
-  ValueType type;
-  union {
-    float float_val;
-    int int_val;
-    char* str_val;
-  } data;
-} Value;
 
 // AST Node Types
 enum NodeType {
@@ -39,6 +24,7 @@ enum NodeType {
     NODE_BOOL_OP,
     NODE_BOOL,
     NODE_STRING,
+    NODE_ERROR
 };
 
 // AST Node Structure

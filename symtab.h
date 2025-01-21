@@ -16,12 +16,16 @@ typedef struct {
     int int_val;
     char* str_val;
   } data;
-} Value
+} Value;
 
 typedef struct SymbolNode {
     char *name;           // Variable name
     ValueType type;       // Type of the value
-    Value val;         // The value itself
+    union {
+      float float_val;
+      int int_val;
+      char* string_val;
+    } data;
     struct SymbolNode *next;
 } SymbolNode;
 
@@ -32,7 +36,8 @@ void init_symbol_table(void);
 SymbolNode *lookup_symbol(const char *name);
 
 // Insert or update different symbols
-SymbolNode *put_symbol_num(const char *name, const float value);
+SymbolNode *put_symbol_int(const char *name, int value);
+SymbolNode *put_symbol_float(const char *name, float value);
 SymbolNode *put_symbol_string(const char *name, const char *value);
 
 // Print a symbol's value

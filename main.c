@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h> // For strcmp
 #include "common_lib.h"
 #include "ast.h"
 #include "parser.tab.h"
@@ -10,11 +11,29 @@ extern int yydebug;
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s <input_file>\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-v] <input_file>\n", argv[0]);
         return 1;
     }
 
-    FILE *file = fopen(argv[1], "r");
+    int verbose = 0; // Flag to track if -v is present
+    char *input_file = NULL;
+
+    // Process command-line arguments
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-v") == 0) {
+            verbose = 1;
+        } else {
+            input_file = argv[i];
+        }
+    }
+
+    if (!input_file) {
+        fprintf(stderr, "Error: No input file provided.\n");
+        fprintf(stderr, "Usage: %s [-v] <input_file>\n", argv[0]);
+        return 1;
+    }
+
+    FILE *file = fopen(input_file, "r");
     if (!file) {
         perror("Failed to open file");
         return 1;
@@ -30,10 +49,10 @@ int main(int argc, char *argv[]) {
 
     fclose(file);
 
-    /*
-    printf("\nScript's Abstract Syntax Tree:\n");
-    print_ast(root_ast, 0);
-    */
+    if (verbose) {
+        printf("\nScript's Abstract Syntax Tree:\n");
+        print_ast(root_ast, 0);
+    }
 
     printf("\nBreezeLang script output: \n");
     evaluate_ast(root_ast);

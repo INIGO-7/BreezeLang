@@ -21,19 +21,17 @@ SymbolNode *lookup_symbol(const char *name) {
     return NULL;
 }
 
-// Handle float type
-SymbolNode *put_symbol_float(const char *name, float val) {
-    // Check if symbol exists
+SymbolNode *put_symbol_float(const char *name, float value) {
     SymbolNode *node = lookup_symbol(name);
     
     if (node != NULL) {
-        // If it was a string previously, free Memory
+        // If it was a string previously, free memory
         if (node->type == TYPE_STRING) {
-            free(node->val.string_val);
+            free(node->data.string_val);
         }
         // Update existing symbol
         node->type = TYPE_FLOAT;
-        node->val.num_val = val;
+        node->data.float_val = value;
         return node;
     }
     
@@ -46,7 +44,7 @@ SymbolNode *put_symbol_float(const char *name, float val) {
     
     node->name = strdup(name);
     node->type = TYPE_FLOAT;
-    node->val.num_val = val;
+    node->data.float_val = value;
     
     // Add to front of list
     node->next = symbol_table;
@@ -55,19 +53,17 @@ SymbolNode *put_symbol_float(const char *name, float val) {
     return node;
 }
 
-// Handle integer type
-SymbolNode *put_symbol_int(const char *name, int val) {
-    // Check if symbol exists
+SymbolNode *put_symbol_int(const char *name, int value) {
     SymbolNode *node = lookup_symbol(name);
     
     if (node != NULL) {
-        // If it was a string previously, free Memory
+        // If it was a string previously, free memory
         if (node->type == TYPE_STRING) {
-            free(node->val.string_val);
+            free(node->data.string_val);
         }
         // Update existing symbol
         node->type = TYPE_INT;
-        node->val.num_val = val;
+        node->data.int_val = value;
         return node;
     }
     
@@ -79,8 +75,8 @@ SymbolNode *put_symbol_int(const char *name, int val) {
     }
     
     node->name = strdup(name);
-    node->type = TYPE_FLOAT;
-    node->val.num_val = val;
+    node->type = TYPE_INT;
+    node->data.int_val = value;
     
     // Add to front of list
     node->next = symbol_table;
@@ -89,17 +85,16 @@ SymbolNode *put_symbol_int(const char *name, int val) {
     return node;
 }
 
-// Handle string type
-SymbolNode *put_symbol_string(const char *name, const char *val) {
+SymbolNode *put_symbol_string(const char *name, const char *value) {
     SymbolNode *node = lookup_symbol(name);
     
     if (node != NULL) {
         // If it was previously a string, free the old string
         if (node->type == TYPE_STRING) {
-            free(node->val.string_val);
+            free(node->data.string_val);
         }
         node->type = TYPE_STRING;
-        node->val.string_val = strdup(val);
+        node->data.string_val = strdup(value);
         return node;
     }
     
@@ -111,22 +106,21 @@ SymbolNode *put_symbol_string(const char *name, const char *val) {
     
     node->name = strdup(name);
     node->type = TYPE_STRING;
-    node->val.string_val = strdup(val);
+    node->data.string_val = strdup(value);
     
-   // Add to front of list
+    // Add to front of list
     node->next = symbol_table;
     symbol_table = node;
     
     return node;
 }
 
-// Add this function to properly free memory
 void free_symbol_table(void) {
     SymbolNode *current = symbol_table;
     while (current != NULL) {
         SymbolNode *next = current->next;
         if (current->type == TYPE_STRING) {
-            free(current->val.string_val);
+            free(current->data.string_val);
         }
         free(current->name);
         free(current);

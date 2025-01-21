@@ -25,7 +25,7 @@ all: $(TARGET)
 
 # Generate parser source files
 parser.tab.c parser.tab.h: $(BISON_SRC)
-	bison -d $(BISON_SRC)
+	bison -d -Wcounterexamples $(BISON_SRC)
 
 # Generate lexer source file
 lex.yy.c: $(FLEX_SRC) parser.tab.h

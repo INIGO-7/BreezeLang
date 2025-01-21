@@ -45,32 +45,32 @@ astnode_t *root_ast;
 program     : stmts { init_symbol_table(); root_ast = $1; }
             ;
 
-stmts       : stmt {
+stmts       : stmt SEMICOLON {
               $$ = astnode_new(NODE_STMTS);
               astnode_add_child($$, $1, 0);
             }
-            | stmts stmt {
+            | stmts stmt SEMICOLON {
               $$ = astnode_new(NODE_STMTS);
               astnode_add_child($$, $1, 0);
               astnode_add_child($$, $2, 1);
             }
             ;
 
-stmt        : IDENTIFIER ASSIGN expr SEMICOLON {
+stmt        : IDENTIFIER ASSIGN expr {
                 $$ = astnode_new(NODE_ASSIGN);
                 $$->val.id = $1;
                 astnode_add_child($$, $3, 0);
             }
-            | IDENTIFIER ASSIGN bool_expr SEMICOLON {
+            | IDENTIFIER ASSIGN bool_expr {
                 $$ = astnode_new(NODE_ASSIGN);
                 $$->val.id = $1;
                 astnode_add_child($$, $3, 0);
             }
-            | PRINT expr SEMICOLON {
+            | PRINT expr {
                 $$ = astnode_new(NODE_PRINT);
                 astnode_add_child($$, $2, 0);
             }
-            | PRINT bool_expr SEMICOLON {
+            | PRINT bool_expr {
                 $$ = astnode_new(NODE_PRINT);
                 astnode_add_child($$, $2, 0);
             }
@@ -121,7 +121,7 @@ factor      : NUMBER            {
             }
             | STRING            {
                 $$ = astnode_new(NODE_STRING);
-                $$->val.string = strdup($1);
+                $$->val.str = strdup($1);
             }
             | IDENTIFIER        {
                 $$ = astnode_new(NODE_ID);
