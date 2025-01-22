@@ -115,6 +115,38 @@ SymbolNode *put_symbol_string(const char *name, const char *value) {
     return node;
 }
 
+SymbolNode *put_symbol_bool(const char *name, int value) {
+    SymbolNode *node = lookup_symbol(name);
+    
+    if (node != NULL) {
+        // If it was a string previously, free memory
+        if (node->type == TYPE_STRING) {
+            free(node->data.string_val);
+        }
+        // Update existing symbol
+        node->type = TYPE_BOOL;
+        node->data.int_val = value;
+        return node;
+    }
+    
+    // Create new symbol
+    node = malloc(sizeof(SymbolNode));
+    if (node == NULL) {
+        fprintf(stderr, "Error: Memory allocation failed\n");
+        exit(1);
+    }
+    
+    node->name = strdup(name);
+    node->type = TYPE_BOOL;
+    node->data.int_val = value;
+    
+    // Add to front of list
+    node->next = symbol_table;
+    symbol_table = node;
+    
+    return node;
+}
+
 void free_symbol_table(void) {
     SymbolNode *current = symbol_table;
     while (current != NULL) {

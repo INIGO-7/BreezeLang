@@ -40,6 +40,7 @@ SymbolNode *lookup_symbol(const char *name);
 SymbolNode *put_symbol_int(const char *name, int value);
 SymbolNode *put_symbol_float(const char *name, float value);
 SymbolNode *put_symbol_string(const char *name, const char *value);
+SymbolNode *put_symbol_bool(const char *name, int value);
 
 // Print a symbol's value
 void print_symbol(const char *name);

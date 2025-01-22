@@ -135,8 +135,8 @@ void evaluate_ast(astnode_t *node) {
         case TYPE_STRING:
           put_symbol_string(node->val.id, value.data.str_val);
           break;
-        /*case TYPE_BOOL:
-          put_symbol_bool(node->val.id, value.data.int_val);*/
+        case TYPE_BOOL:
+          put_symbol_bool(node->val.id, value.data.int_val);
       }
       break;
 
@@ -193,6 +193,8 @@ static Value evaluate_expr(astnode_t *node) {
           return create_float_value(symbol->data.float_val);
         case TYPE_INT:
           return create_int_value(symbol->data.int_val);
+        case TYPE_BOOL:
+          return create_bool_value(symbol->data.int_val);
 
         default:
           fprintf(stderr, "Error, the type of the variable isn't recognized\n");
