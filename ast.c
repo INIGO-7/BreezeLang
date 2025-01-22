@@ -105,6 +105,7 @@ void free_ast(astnode_t *node) {
 // ----------- EVALUATION FUNCTION -----------
 
 static Value evaluate_expr(astnode_t *node);
+void evaluate_while(astnode_t *node);
 
 void evaluate_ast(astnode_t *node) {
   if (!node) {
@@ -123,8 +124,8 @@ void evaluate_ast(astnode_t *node) {
       break;
 
     case NODE_ASSIGN:
-      // Evaluate right-hand side and store in symbol table
       Value value = evaluate_expr(node->child[0]);
+
       switch(value.type) {
         case TYPE_FLOAT:
           put_symbol_float(node->val.id, value.data.float_val);
@@ -137,6 +138,7 @@ void evaluate_ast(astnode_t *node) {
           break;
         case TYPE_BOOL:
           put_symbol_bool(node->val.id, value.data.int_val);
+          break;
       }
       break;
 
@@ -149,6 +151,10 @@ void evaluate_ast(astnode_t *node) {
         else if (value.type == TYPE_STRING) printf("%s\n", value.data.str_val);
         else if (value.type == TYPE_BOOL) printf("%s\n", value.data.int_val ? "true" : "false");
       }
+      break;
+
+    case NODE_WHILE:
+      evaluate_while(node);
       break;
 
     default:
@@ -185,6 +191,7 @@ static Value evaluate_expr(astnode_t *node) {
         fprintf(stderr, "Error: Undefined variable '%s'\n", node->val.id);
         exit(EXIT_FAILURE);
       }
+
       switch (symbol->type) {
 
         case TYPE_STRING:
@@ -335,4 +342,33 @@ static Value evaluate_expr(astnode_t *node) {
       fprintf(stderr, "Error: Unknown node type in evaluation\n");
       exit(EXIT_FAILURE);
   }
+}
+
+void evaluate_while(astnode_t *node) {
+    if (!node || node->type != NODE_WHILE) {
+        fprintf(stderr, "Error: Invalid while loop node\n");
+        exit(EXIT_FAILURE);
+    }
+
+    astnode_t *condition = node->child[0];
+    astnode_t *body = node->child[1];
+
+    if (!condition || !body) {
+        fprintf(stderr, "Error: While loop missing condition or body\n");
+        exit(EXIT_FAILURE);
+    }
+
+    while (1) {
+        Value cond_value = evaluate_expr(condition);
+        
+        if (cond_value.type != TYPE_BOOL) {
+            fprintf(stderr, "Error: While loop condition must evaluate to a boolean\n");
+            exit(EXIT_FAILURE);
+        }
+        /* When the condition is not valid anymore, we exit the loop */
+        if (!cond_value.data.int_val) {
+            break;
+        }
+        evaluate_ast(body);
+    }
 }

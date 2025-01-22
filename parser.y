@@ -21,6 +21,7 @@ astnode_t *root_ast;
 %token <number> NUMBER
 %token <decimal> DECIMAL
 %token <string> IDENTIFIER STRING
+%token WHILE FOR FUNC FUNCSTART FUNCEND
 %token TRUE FALSE
 %token AND OR NOT
 %token EQ NEQ LT GT LE GE
@@ -42,8 +43,7 @@ astnode_t *root_ast;
 
 %%
 
-program     : stmts { init_symbol_table(); root_ast = $1; }
-            ;
+program     : stmts { init_symbol_table(); root_ast = $1; };
 
 stmts       : stmt SEMICOLON {
               $$ = astnode_new(NODE_STMTS);
@@ -73,6 +73,11 @@ stmt        : IDENTIFIER ASSIGN expr {
             | PRINT bool_expr {
                 $$ = astnode_new(NODE_PRINT);
                 astnode_add_child($$, $2, 0);
+            }
+            | WHILE bool_expr FUNCSTART stmts FUNCEND {
+                $$ = astnode_new(NODE_WHILE);
+                astnode_add_child($$, $2, 0);
+                astnode_add_child($$, $4, 1);
             }
             ;
 

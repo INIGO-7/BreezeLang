@@ -12,7 +12,9 @@ void init_symbol_table(void) {
 
 SymbolNode *lookup_symbol(const char *name) {
     SymbolNode *current = symbol_table;
+    
     while (current != NULL) {
+        
         if (strcmp(current->name, name) == 0) {
             return current;
         }
@@ -115,17 +117,16 @@ SymbolNode *put_symbol_string(const char *name, const char *value) {
     return node;
 }
 
+// In symtab.c, modify put_symbol_bool:
 SymbolNode *put_symbol_bool(const char *name, int value) {
+    
+    // First try to find existing symbol
     SymbolNode *node = lookup_symbol(name);
     
     if (node != NULL) {
-        // If it was a string previously, free memory
-        if (node->type == TYPE_STRING) {
-            free(node->data.string_val);
-        }
         // Update existing symbol
         node->type = TYPE_BOOL;
-        node->data.int_val = value;
+        node->data.int_val = value ? 1 : 0;
         return node;
     }
     
@@ -138,7 +139,7 @@ SymbolNode *put_symbol_bool(const char *name, int value) {
     
     node->name = strdup(name);
     node->type = TYPE_BOOL;
-    node->data.int_val = value;
+    node->data.int_val = value ? 1 : 0;
     
     // Add to front of list
     node->next = symbol_table;

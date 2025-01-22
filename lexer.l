@@ -38,6 +38,12 @@ extern FILE *yyin;
 "="                       { return ASSIGN; }
 ";"                       { return SEMICOLON; }
 
+"w["                      { return WHILE; }
+"f["                      { return FOR; }
+"d["                      { return FUNC; }
+"->"                      { return FUNCSTART; }
+"]"                       { return FUNCEND; }
+
 \/\*[^*]*\*+([^/*][^*]*\*+)*\/    { /* ignore block comments */ }
 "//".*                            { /* ignore single line comments */ }
 [ \t\n]                   { /* ignore whitespace */ }

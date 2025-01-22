@@ -24,6 +24,7 @@ enum NodeType {
     NODE_BOOL_OP,
     NODE_BOOL,
     NODE_STRING,
+    NODE_WHILE,
     NODE_ERROR
 };
 
