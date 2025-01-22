@@ -1,0 +1,9 @@
+x = true;
+
+w[ x ->
+  print "We're in!";
+  x = false;
+];
+
+print "x's final value";
+print x;
