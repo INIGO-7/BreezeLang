@@ -1,8 +1,0 @@
-x = 5;
-y = 2;
-print x * y;
-print x**2;
-print 1;
-print true;
-z = 1 == 0;
-print z;
