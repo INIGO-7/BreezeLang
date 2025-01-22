@@ -25,6 +25,13 @@ Value create_str_value(const char* s) {
   return v;
 }
 
+Value create_bool_value(int i) {
+  Value v;
+  v.type = TYPE_BOOL;
+  v.data.int_val = i;
+  return v;
+}
+
 // Create a new AST node
 astnode_t *astnode_new(int type) {
   astnode_t *node = calloc(1, sizeof(astnode_t));
@@ -128,6 +135,8 @@ void evaluate_ast(astnode_t *node) {
         case TYPE_STRING:
           put_symbol_string(node->val.id, value.data.str_val);
           break;
+        /*case TYPE_BOOL:
+          put_symbol_bool(node->val.id, value.data.int_val);*/
       }
       break;
 
@@ -136,8 +145,9 @@ void evaluate_ast(astnode_t *node) {
       if (node->child[0]) {
         Value value = evaluate_expr(node->child[0]);
         if (value.type == TYPE_FLOAT) printf("%f\n", value.data.float_val);
-        else if (value.type == TYPE_INT) printf("%d\n", value.data.int_val);
+        else if (value.type == TYPE_INT) printf("%d\n", (int)value.data.int_val);
         else if (value.type == TYPE_STRING) printf("%s\n", value.data.str_val);
+        else if (value.type == TYPE_BOOL) printf("%s\n", value.data.int_val ? "true" : "false");
       }
       break;
 
@@ -286,34 +296,34 @@ static Value evaluate_expr(astnode_t *node) {
       return create_float_value(result);
 
     case NODE_BOOL:
-      return create_int_value(node->val.boolean ? 1 : 0);
+      return create_bool_value(node->val.boolean ? 1 : 0);
 
     case NODE_BOOL_OP:
       left = evaluate_expr(node->child[0]);
 
       if (strcmp(node->val.bool_op_type, "not") == 0) {
-        return create_int_value((!left.data.int_val) ? 1 : 0);
+        return create_bool_value((!left.data.int_val) ? 1 : 0);
       }
 
       // Only evaluate right child for binary operations
       right = evaluate_expr(node->child[1]);
 
       if (strcmp(node->val.bool_op_type, "and") == 0) {
-        return create_int_value((left.data.int_val && right.data.int_val) ? 1 : 0);
+        return create_bool_value((left.data.int_val && right.data.int_val) ? 1 : 0);
       } else if (strcmp(node->val.bool_op_type, "or") == 0) {
-        return create_int_value((left.data.int_val || right.data.int_val) ? 1 : 0);
+        return create_bool_value((left.data.int_val || right.data.int_val) ? 1 : 0);
       } else if (strcmp(node->val.bool_op_type, "eq") == 0) {
-        return create_int_value((left.data.int_val == right.data.int_val) ? 1 : 0);
+        return create_bool_value((left.data.int_val == right.data.int_val) ? 1 : 0);
       } else if (strcmp(node->val.bool_op_type, "neq") == 0) {
-        return create_int_value((left.data.int_val != right.data.int_val) ? 1 : 0);
+        return create_bool_value((left.data.int_val != right.data.int_val) ? 1 : 0);
       } else if (strcmp(node->val.bool_op_type, "lt") == 0) {
-        return create_int_value((left.data.int_val < right.data.int_val) ? 1 : 0);
+        return create_bool_value((left.data.int_val < right.data.int_val) ? 1 : 0);
       } else if (strcmp(node->val.bool_op_type, "le") == 0) {
-        return create_int_value((left.data.int_val <= right.data.int_val) ? 1 : 0);
+        return create_bool_value((left.data.int_val <= right.data.int_val) ? 1 : 0);
       } else if (strcmp(node->val.bool_op_type, "gt") == 0) {
-        return create_int_value((left.data.int_val > right.data.int_val) ? 1 : 0);
+        return create_bool_value((left.data.int_val > right.data.int_val) ? 1 : 0);
       } else if (strcmp(node->val.bool_op_type, "ge") == 0) {
-        return create_int_value((left.data.int_val >= right.data.int_val) ? 1 : 0);
+        return create_bool_value((left.data.int_val >= right.data.int_val) ? 1 : 0);
       } else {
         fprintf(stderr, "Error: Unknown boolean operator\n");
         exit(EXIT_FAILURE);

@@ -6,7 +6,8 @@
 typedef enum {
   TYPE_FLOAT,
   TYPE_INT,
-  TYPE_STRING
+  TYPE_STRING,
+  TYPE_BOOL
 } ValueType;
 
 typedef struct {

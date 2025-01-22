@@ -45,6 +45,7 @@ typedef struct astnode {
 Value create_float_value(float f);
 Value create_int_value(int i);
 Value create_string_value(const char* s);
+Value create_bool_value(int i);
 
 // AST Functions
 astnode_t *astnode_new(int type);
