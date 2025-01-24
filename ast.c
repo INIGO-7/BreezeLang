@@ -73,6 +73,13 @@ void print_ast(astnode_t *node, int depth) {
     case NODE_BOOL_OP: printf("BOOL_OP\n"); break;
     case NODE_BOOL: printf("BOOL: %s\n", node->val.boolean ? "true" : "false"); break;
     case NODE_STRING: printf("STRING: %s\n", node->val.str); break; 
+    case NODE_WHILE: 
+      printf("WHILE loop\n"); 
+      printf("Child node 1 (condition):\n");
+      print_ast(node->child[0], depth+1);
+      printf("Child node 2 (while's body):\n");
+      print_ast(node->child[1], depth+1);
+      break; 
     default: printf("UNKNOWN NODE\n");
   }
 

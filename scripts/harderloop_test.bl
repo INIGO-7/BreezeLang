@@ -1,9 +1,11 @@
 x = true;
+print "x's initial value:";
+print x;
 
 w[ x ->
   print "We're in!";
   x = false;
 ];
 
-print "x's final value";
+print "x's final value:";
 print x;

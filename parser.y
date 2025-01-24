@@ -154,10 +154,6 @@ bool_expr   : TRUE                            {
                 $$ = astnode_new(NODE_BOOL);
                 $$->val.boolean = false;
             }
-            | IDENTIFIER {
-                $$ = astnode_new(NODE_ID);
-                $$->val.id = $1;
-            }
             | bool_expr AND bool_expr         { 
                 $$ = astnode_new(NODE_BOOL_OP);
                 $$->val.bool_op_type = strdup("and");
@@ -177,9 +173,9 @@ bool_expr   : TRUE                            {
             }
             | compar_expr                     { $$ = $1; }
             | OPENPAR bool_expr CLOSEPAR      { $$ = $2; }            
-            | expr                            { /*expr to handle bool id case*/
-                $$ = astnode_new(NODE_BOOL);
-                astnode_add_child($$, $1, 0);
+            | IDENTIFIER                      { /*expr to handle bool id case*/
+                $$ = astnode_new(NODE_ID);
+                $$->val.id = $1;
             }
             ;
 
