@@ -61,25 +61,42 @@ void print_ast(astnode_t *node, int depth) {
 
   // Print node type and value
   switch (node->type) { 
-    case NODE_NUM: printf("NUM: %d\n", node->val.num); break;
-    case NODE_DEC: printf("DEC: %f\n", node->val.decimal); break;
-    case NODE_ASSIGN: printf("ASSIGN\n"); break;
-    case NODE_ADD: printf("ADD\n"); break;
-    case NODE_SUB: printf("SUB\n"); break;
-    case NODE_MUL: printf("MUL\n"); break;
-    case NODE_DIV: printf("DIV\n"); break;
-    case NODE_EXP: printf("EXP\n"); break;
-    case NODE_PRINT: printf("PRINT\n"); break;
+    case NODE_NUM:     printf("NUM: %d\n", node->val.num); break;
+    case NODE_DEC:     printf("DEC: %f\n", node->val.decimal); break;
+    case NODE_ASSIGN:  printf("ASSIGN\n"); break;
+    case NODE_ADD:     printf("ADD\n"); break;
+    case NODE_SUB:     printf("SUB\n"); break;
+    case NODE_MUL:     printf("MUL\n"); break;
+    case NODE_DIV:     printf("DIV\n"); break;
+    case NODE_EXP:     printf("EXP\n"); break;
+    case NODE_PRINT:   printf("PRINT\n"); break;
     case NODE_BOOL_OP: printf("BOOL_OP\n"); break;
-    case NODE_BOOL: printf("BOOL: %s\n", node->val.boolean ? "true" : "false"); break;
-    case NODE_STRING: printf("STRING: %s\n", node->val.str); break; 
-    case NODE_WHILE: 
+    case NODE_BOOL:    printf("BOOL: %s\n", node->val.boolean ? "true" : "false"); break;
+    case NODE_STRING:  printf("STRING: %s\n", node->val.str); break; 
+    case NODE_WHILE:
       printf("WHILE loop\n"); 
+      for (int i = 0; i < depth; i++) printf("  ");
       printf("Child node 1 (condition):\n");
       print_ast(node->child[0], depth+1);
+      for (int i = 0; i < depth; i++) printf("  ");
       printf("Child node 2 (while's body):\n");
       print_ast(node->child[1], depth+1);
       break; 
+    case NODE_FOR:
+      printf("FOR loop\n"); 
+      for (int i = 0; i < depth; i++) printf("  ");
+      printf("Child node 1 (for init):\n");
+      print_ast(node->child[0], depth+1);
+      for (int i = 0; i < depth; i++) printf("  ");
+      printf("Child node 2 (for condition):\n");
+      print_ast(node->child[1], depth+1);
+      for (int i = 0; i < depth; i++) printf("  ");
+      printf("Child node 3 (for update):\n");
+      print_ast(node->child[2], depth+1);
+      for (int i = 0; i < depth; i++) printf("  ");
+      printf("Child node 4 (for body):\n");
+      print_ast(node->child[3], depth+1);
+      break;
     default: printf("UNKNOWN NODE\n");
   }
 
@@ -113,6 +130,7 @@ void free_ast(astnode_t *node) {
 
 static Value evaluate_expr(astnode_t *node);
 void evaluate_while(astnode_t *node);
+void evaluate_for(astnode_t *node);
 
 void evaluate_ast(astnode_t *node) {
   if (!node) {
@@ -162,6 +180,10 @@ void evaluate_ast(astnode_t *node) {
 
     case NODE_WHILE:
       evaluate_while(node);
+      break;
+
+    case NODE_FOR:
+      evaluate_for(node);
       break;
 
     default:
@@ -352,30 +374,64 @@ static Value evaluate_expr(astnode_t *node) {
 }
 
 void evaluate_while(astnode_t *node) {
-    if (!node || node->type != NODE_WHILE) {
-        fprintf(stderr, "Error: Invalid while loop node\n");
-        exit(EXIT_FAILURE);
-    }
+  if (!node || node->type != NODE_WHILE) {
+    fprintf(stderr, "Error: Invalid while loop node\n");
+    exit(EXIT_FAILURE);
+  }
 
-    astnode_t *condition = node->child[0];
-    astnode_t *body = node->child[1];
+  astnode_t *condition = node->child[0];
+  astnode_t *body = node->child[1];
 
-    if (!condition || !body) {
-        fprintf(stderr, "Error: While loop missing condition or body\n");
-        exit(EXIT_FAILURE);
-    }
+  if (!condition || !body) {
+    fprintf(stderr, "Error: While loop missing condition or body\n");
+    exit(EXIT_FAILURE);
+  }
 
-    while (1) {
-        Value cond_value = evaluate_expr(condition);
-        
-        if (cond_value.type != TYPE_BOOL) {
-            fprintf(stderr, "Error: While loop condition must evaluate to a boolean\n");
-            exit(EXIT_FAILURE);
-        }
-        /* When the condition is not valid anymore, we exit the loop */
-        if (!cond_value.data.int_val) {
-            break;
-        }
-        evaluate_ast(body);
+  while (1) {
+    Value cond_value = evaluate_expr(condition);
+
+    if (cond_value.type != TYPE_BOOL) {
+      fprintf(stderr, "Error: While loop condition must evaluate to a boolean\n");
+      exit(EXIT_FAILURE);
     }
+    /* When the condition is not valid anymore, we exit the loop */
+    if (!cond_value.data.int_val) {
+      break;
+    }
+    evaluate_ast(body);
+  }
+}
+
+void evaluate_for(astnode_t *node) {
+  if (!node || node->type != NODE_FOR) {
+    fprintf(stderr, "Error: Invalid for loop node\n");
+    exit(EXIT_FAILURE);
+  }
+
+  astnode_t *init =       node->child[0];
+  astnode_t *condition =  node->child[1];
+  astnode_t *update =     node->child[2];
+  astnode_t *body =       node->child[3];
+
+  if (!init || !condition || !update || !body) {
+    fprintf(stderr, "Error: For loop missing a fundamental building block (init | conditiion | update | body)\n");
+    exit(EXIT_FAILURE);
+  }
+
+  evaluate_ast(init);
+
+  while(1) {
+    Value cond_value = evaluate_expr(condition);
+
+    if (cond_value.type != TYPE_BOOL) {
+      fprintf(stderr, "Error: For loop condition must evaluate to a boolean\n");
+      exit(EXIT_FAILURE);
+    }
+    /* When the condition is not valid anymore, we exit the loop */
+    if (!cond_value.data.int_val) {
+      break;
+    }
+    evaluate_ast(body);
+    evaluate_ast(update);
+  }
 }

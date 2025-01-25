@@ -13,6 +13,10 @@ print a;
 b = y / x;
 print b;
 
+test = 0;
+test = test + 1;
+print test;
+
 /* boolean operations */
 is_true = true;
 is_false = false;

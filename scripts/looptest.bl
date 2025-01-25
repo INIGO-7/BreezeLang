@@ -1,21 +1,22 @@
-x = true;
-print "x's initial value:";
-print x;
-print "--- Testing while loop";
-
-w[ x ->
-  print "We're inside the while loop!";
-  x = false;
+x = 0;
+w[ x < 5 -> 
+    x = x + 1;
 ];
 
-print "x's value (this should be false):";
-print x;
+print "Has test one passed:";
+print x == 5; // This has to be true
 
-print "--- Testing for loop";
-
-f[ y=1,y<5,y=y+1 ->
-  print "We're inside the for loop!";
+y = true;
+w[ y ->
+  y = false;
 ];
 
-print "y's value (this should be true)";
-print x;
+print "Has test two passed:";
+print y; // This has to be true
+
+f[ z=1,z<5,z=z+1 ->
+  print z;
+];
+
+print "Has test three passed:";
+print z == 5; // This has to be true

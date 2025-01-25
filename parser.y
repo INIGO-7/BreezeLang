@@ -25,12 +25,13 @@ astnode_t *root_ast;
 %token TRUE FALSE
 %token AND OR NOT
 %token EQ NEQ LT GT LE GE
-%token PRINT ASSIGN SEMICOLON
+%token PRINT ASSIGN SEMICOLON COLON
 %token PLUS MINUS MUL DIV EXP
 %token OPENPAR CLOSEPAR
 
 /* Declare types for our new non-terminals */
-%type <ast> stmt stmts expr term factor bool_expr compar_expr
+%type <ast> stmt stmts expr term factor 
+%type <ast> bool_expr compar_expr for_init for_update
 
 /* Operator precedence and associativity */
 %left PLUS MINUS
@@ -79,7 +80,26 @@ stmt        : IDENTIFIER ASSIGN expr {
                 astnode_add_child($$, $2, 0);
                 astnode_add_child($$, $4, 1);
             }
+            | FOR for_init COLON bool_expr COLON for_update FUNCSTART stmts FUNCEND {
+                $$ = astnode_new(NODE_FOR);
+                astnode_add_child($$, $2, 0);   // for init
+                astnode_add_child($$, $4, 1);   // for condition
+                astnode_add_child($$, $6, 2);   // for update
+                astnode_add_child($$, $8, 3);   // for body
+            }
             ;
+
+for_init    : IDENTIFIER ASSIGN expr {
+                $$ = astnode_new(NODE_ASSIGN);
+                $$->val.id = $1;
+                astnode_add_child($$, $3, 0);
+            }
+
+for_update  : IDENTIFIER ASSIGN expr {
+                $$ = astnode_new(NODE_ASSIGN);
+                $$->val.id = $1;
+                astnode_add_child($$, $3, 0);
+            }
 
 expr        : expr PLUS term    { 
                 $$ = astnode_new(NODE_ADD);
@@ -170,6 +190,7 @@ bool_expr   : TRUE                            {
                 $$ = astnode_new(NODE_BOOL_OP);
                 $$->val.bool_op_type = strdup("not");
                 astnode_add_child($$, $2, 0);
+                printf("yes looks like its workin");
             }
             | compar_expr                     { $$ = $1; }
             | OPENPAR bool_expr CLOSEPAR      { $$ = $2; }            

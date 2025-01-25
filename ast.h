@@ -6,7 +6,7 @@
 // Include ValueType and Value structures 
 #include "symtab.h"
 
-#define MAXCHILDREN 5
+#define MAXCHILDREN 50
 
 // AST Node Types
 enum NodeType {
@@ -25,6 +25,7 @@ enum NodeType {
     NODE_BOOL,
     NODE_STRING,
     NODE_WHILE,
+    NODE_FOR,
     NODE_ERROR
 };
 

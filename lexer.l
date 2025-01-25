@@ -37,6 +37,7 @@ extern FILE *yyin;
 
 "="                       { return ASSIGN; }
 ";"                       { return SEMICOLON; }
+","                       { return COLON; }
 
 "w["                      { return WHILE; }
 "f["                      { return FOR; }
