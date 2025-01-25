@@ -1,7 +1,21 @@
-x = 0;
-w[ x < 5 -> 
-    print x;
-    x = x + 1;
+x = true;
+print "x's initial value:";
+print x;
+print "--- Testing while loop";
+
+w[ x ->
+  print "We're inside the while loop!";
+  x = false;
 ];
-print "x's final value: ";
+
+print "x's value (this should be false):";
+print x;
+
+print "--- Testing for loop";
+
+f[ y=1,y<5,y=y+1 ->
+  print "We're inside the for loop!";
+];
+
+print "y's value (this should be true)";
 print x;
