@@ -4,6 +4,8 @@ y = 2.5;
 z = x + y;
 print z;
 
+print x + y + z;
+
 w = y - x;
 print w;
 
@@ -17,13 +19,19 @@ test = 0;
 test = test + 1;
 print test;
 
+unary = -1;
+print unary;
+
 /* boolean operations */
 is_true = true;
 is_false = false;
+print "The following 4 should be: true, false, true, false";
 print is_true;
 print is_false;
 print 1 == 1;
 print 1 == 0;
+
+print "The following 3 should be: false, true, false";
 
 print is_true && is_false;
 
@@ -34,7 +42,8 @@ not_result = !is_true;
 print not_result;
 
 /* complex boolean operations */
-complex_bool = (x < y) && (y > z);
+print "The following 4 should be: true, true, true, true";
+complex_bool = (x < y) && (z > y);
 print complex_bool;
 
 another_bool = (x == 0.5) || (y == 0);

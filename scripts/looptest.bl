@@ -12,7 +12,7 @@ w[ y ->
 ];
 
 print "Has test two passed:";
-print y; // This has to be true
+print !y; // This has to be true
 
 f[ z=1,z<5,z=z+1 ->
   print z;

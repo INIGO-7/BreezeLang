@@ -61,8 +61,8 @@ void print_ast(astnode_t *node, int depth) {
 
   // Print node type and value
   switch (node->type) { 
-    case NODE_NUM:     printf("NUM: %d\n", node->val.num); break;
-    case NODE_DEC:     printf("DEC: %f\n", node->val.decimal); break;
+    case NODE_INT:     printf("NUM: %d\n", node->data.num); break;
+    case NODE_FLOAT:     printf("DEC: %f\n", node->data.dec); break;
     case NODE_ASSIGN:  printf("ASSIGN\n"); break;
     case NODE_ADD:     printf("ADD\n"); break;
     case NODE_SUB:     printf("SUB\n"); break;
@@ -71,8 +71,8 @@ void print_ast(astnode_t *node, int depth) {
     case NODE_EXP:     printf("EXP\n"); break;
     case NODE_PRINT:   printf("PRINT\n"); break;
     case NODE_BOOL_OP: printf("BOOL_OP\n"); break;
-    case NODE_BOOL:    printf("BOOL: %s\n", node->val.boolean ? "true" : "false"); break;
-    case NODE_STRING:  printf("STRING: %s\n", node->val.str); break; 
+    case NODE_BOOL:    printf("BOOL: %s\n", node->data.boolean ? "true" : "false"); break;
+    case NODE_STRING:  printf("STRING: %s\n", node->data.str); break; 
     case NODE_WHILE:
       printf("WHILE loop\n"); 
       for (int i = 0; i < depth; i++) printf("  ");
@@ -116,11 +116,9 @@ void free_ast(astnode_t *node) {
     free_ast(node->child[i]);
   }
 
-  // Free identifier and boolean operation type strings
-  if (node->type == NODE_ID && node->val.id) {
-    free(node->val.id);
-  } else if (node->type == NODE_BOOL_OP && node->val.bool_op_type) {
-    free(node->val.bool_op_type);
+  // Free identifier 
+  if (node->type == NODE_ID && node->data.id) {
+    free(node->data.id);
   }
 
   free(node);
@@ -153,16 +151,16 @@ void evaluate_ast(astnode_t *node) {
 
       switch(value.type) {
         case TYPE_FLOAT:
-          put_symbol_float(node->val.id, value.data.float_val);
+          put_symbol_float(node->data.id, value.data.float_val);
           break;
         case TYPE_INT:
-          put_symbol_int(node->val.id, value.data.int_val);
+          put_symbol_int(node->data.id, value.data.int_val);
           break;
         case TYPE_STRING:
-          put_symbol_string(node->val.id, value.data.str_val);
+          put_symbol_string(node->data.id, value.data.str_val);
           break;
         case TYPE_BOOL:
-          put_symbol_bool(node->val.id, value.data.int_val);
+          put_symbol_bool(node->data.id, value.data.int_val);
           break;
       }
       break;
@@ -175,6 +173,9 @@ void evaluate_ast(astnode_t *node) {
         else if (value.type == TYPE_INT) printf("%d\n", (int)value.data.int_val);
         else if (value.type == TYPE_STRING) printf("%s\n", value.data.str_val);
         else if (value.type == TYPE_BOOL) printf("%s\n", value.data.int_val ? "true" : "false");
+      } else {
+        fprintf(stderr, "Error: print node doesn't have children. This means that the print function does not know what to print.\n");
+        exit(EXIT_FAILURE); 
       }
       break;
 
@@ -205,19 +206,19 @@ static Value evaluate_expr(astnode_t *node) {
   SymbolNode *symbol;
 
   switch (node->type) {
-    case NODE_NUM:
-      return create_int_value(node->val.num);
+    case NODE_INT:
+      return create_int_value(node->data.num);
 
-    case NODE_DEC:
-      return create_float_value(node->val.decimal);
+    case NODE_FLOAT:
+      return create_float_value(node->data.dec);
 
     case NODE_STRING:
-      return create_str_value(node->val.str);
+      return create_str_value(node->data.str);
 
     case NODE_ID:
-      symbol = lookup_symbol(node->val.id);
+      symbol = lookup_symbol(node->data.id);
       if (!symbol) {
-        fprintf(stderr, "Error: Undefined variable '%s'\n", node->val.id);
+        fprintf(stderr, "Error: Undefined variable '%s'\n", node->data.id);
         exit(EXIT_FAILURE);
       }
 
@@ -236,6 +237,7 @@ static Value evaluate_expr(astnode_t *node) {
           fprintf(stderr, "Error, the type of the variable isn't recognized\n");
           exit(EXIT_FAILURE);
       }
+    
 
     case NODE_ADD:
       left = evaluate_expr(node->child[0]);
@@ -334,33 +336,33 @@ static Value evaluate_expr(astnode_t *node) {
       return create_float_value(result);
 
     case NODE_BOOL:
-      return create_bool_value(node->val.boolean ? 1 : 0);
+      return create_bool_value(node->data.boolean ? 1 : 0);
 
     case NODE_BOOL_OP:
       left = evaluate_expr(node->child[0]);
 
-      if (strcmp(node->val.bool_op_type, "not") == 0) {
-        return create_bool_value((!left.data.int_val) ? 1 : 0);
+      if (node->data.bool_op == OP_NOT) {
+        return create_bool_value((!left.data.bool_val) ? 1 : 0);
       }
 
       // Only evaluate right child for binary operations
       right = evaluate_expr(node->child[1]);
 
-      if (strcmp(node->val.bool_op_type, "and") == 0) {
+      if (node->data.bool_op == OP_AND) {
         return create_bool_value((left.data.int_val && right.data.int_val) ? 1 : 0);
-      } else if (strcmp(node->val.bool_op_type, "or") == 0) {
+      } else if (node->data.bool_op == OP_OR) {
         return create_bool_value((left.data.int_val || right.data.int_val) ? 1 : 0);
-      } else if (strcmp(node->val.bool_op_type, "eq") == 0) {
+      } else if (node->data.bool_op == OP_EQ) {
         return create_bool_value((left.data.int_val == right.data.int_val) ? 1 : 0);
-      } else if (strcmp(node->val.bool_op_type, "neq") == 0) {
+      } else if (node->data.bool_op == OP_NEQ) {
         return create_bool_value((left.data.int_val != right.data.int_val) ? 1 : 0);
-      } else if (strcmp(node->val.bool_op_type, "lt") == 0) {
+      } else if (node->data.bool_op == OP_LT) { 
         return create_bool_value((left.data.int_val < right.data.int_val) ? 1 : 0);
-      } else if (strcmp(node->val.bool_op_type, "le") == 0) {
+      } else if (node->data.bool_op == OP_LE) {
         return create_bool_value((left.data.int_val <= right.data.int_val) ? 1 : 0);
-      } else if (strcmp(node->val.bool_op_type, "gt") == 0) {
+      } else if (node->data.bool_op == OP_GT) {
         return create_bool_value((left.data.int_val > right.data.int_val) ? 1 : 0);
-      } else if (strcmp(node->val.bool_op_type, "ge") == 0) {
+      } else if (node->data.bool_op == OP_GE) {
         return create_bool_value((left.data.int_val >= right.data.int_val) ? 1 : 0);
       } else {
         fprintf(stderr, "Error: Unknown boolean operator\n");
@@ -368,7 +370,7 @@ static Value evaluate_expr(astnode_t *node) {
       }
 
     default:
-      fprintf(stderr, "Error: Unknown node type in evaluation\n");
+      fprintf(stderr, "Error: Unknown node type in evaluation. Maybe you should use evaluate_ast() instead of evaluate_expr()?\n");
       exit(EXIT_FAILURE);
   }
 }

@@ -17,8 +17,8 @@ enum NodeType {
     NODE_MUL,
     NODE_DIV,
     NODE_EXP,
-    NODE_NUM,
-    NODE_DEC,
+    NODE_INT,
+    NODE_FLOAT,
     NODE_ID,
     NODE_PRINT,
     NODE_BOOL_OP,
@@ -29,17 +29,29 @@ enum NodeType {
     NODE_ERROR
 };
 
+enum BoolOpType {
+    OP_AND,
+    OP_OR,
+    OP_NOT,
+    OP_EQ,
+    OP_NEQ,
+    OP_LT,
+    OP_LE,
+    OP_GT,
+    OP_GE
+};
+
 // AST Node Structure
 typedef struct astnode {
-    int type;                             // Node type
+    enum NodeType type;                             // Node type
     union {
         int num;                          // Integer values
-        double decimal;                   // Decimal values
+        float dec;                   // Decimal values
         char *id;                         // Identifier (variable name)
         char *str;                        // Strings
         int boolean;                      // Boolean values (1 for true, 0 for false)
-        char *bool_op_type;               // Type of boolean operation
-    } val;
+        enum BoolOpType bool_op;         // Type of boolean operation
+    } data;
     struct astnode *child[MAXCHILDREN];   // Pointers to child nodes
 } astnode_t;
 

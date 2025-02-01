@@ -16,6 +16,7 @@ typedef struct {
     float float_val;
     int int_val;
     char* str_val;
+    int bool_val;
   } data;
 } Value;
 
@@ -25,6 +26,7 @@ typedef struct SymbolNode {
     union {
       float float_val;
       int int_val;
+      int bool_val;
       char* string_val;
     } data;
     struct SymbolNode *next;

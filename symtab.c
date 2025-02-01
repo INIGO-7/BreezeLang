@@ -126,7 +126,7 @@ SymbolNode *put_symbol_bool(const char *name, int value) {
   if (node != NULL) {
     // Update existing symbol
     node->type = TYPE_BOOL;
-    node->data.int_val = value ? 1 : 0;
+    node->data.bool_val = value ? 1 : 0;
     return node;
   }
 
@@ -139,7 +139,7 @@ SymbolNode *put_symbol_bool(const char *name, int value) {
 
   node->name = strdup(name);
   node->type = TYPE_BOOL;
-  node->data.int_val = value ? 1 : 0;
+  node->data.bool_val = value ? 1 : 0;
 
   // Add to front of list
   node->next = symbol_table;
