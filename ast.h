@@ -26,6 +26,8 @@ enum NodeType {
     NODE_STRING,
     NODE_WHILE,
     NODE_FOR,
+    NODE_IF,
+    NODE_IFELSE,
     NODE_ERROR
 };
 

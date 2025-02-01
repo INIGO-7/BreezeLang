@@ -20,7 +20,7 @@ astnode_t *root_ast;
 %token <number> INT
 %token <dec> FLOAT
 %token <string> IDENTIFIER STRING
-%token WHILE FOR FUNC FUNCSTART FUNCEND
+%token WHILE FOR FUNC IF ELSE IFELSE FUNCSTART FUNCEND
 %token TRUE FALSE
 %token AND OR NOT
 %token EQ NEQ LT GT LE GE
@@ -91,6 +91,19 @@ stmt
         astnode_add_child($$, $4, 1);  // for condition (now expr)
         astnode_add_child($$, $6, 2);  // for update
         astnode_add_child($$, $8, 3);  // body
+      }
+    | IF expr FUNCSTART stmts FUNCEND
+      {
+        $$ = astnode_new(NODE_IF);
+        astnode_add_child($$, $2, 0);
+        astnode_add_child($$, $4, 1);
+      }
+    | IF expr FUNCSTART stmts ELSE FUNCSTART stmts FUNCEND
+      {
+        $$ = astnode_new(NODE_IFELSE);
+        astnode_add_child($$, $2, 0);
+        astnode_add_child($$, $4, 1);
+        astnode_add_child($$, $7, 2);
       }
     ;
 
@@ -274,11 +287,8 @@ factor
         }
         else
         {
-          /* If $2 is something else, like an identifier or a more
-             complex subexpression, you might prefer to build a
-             "unary minus" node in the AST: */
-          $$ = astnode_new(NODE_UNARY_MINUS);
-          astnode_add_child($$, $2, 0);
+          fprintf(stderr, "Error: invalid type in unary minus\n");
+          exit(EXIT_FAILURE);
         }
       }
     ;

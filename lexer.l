@@ -42,6 +42,9 @@ extern FILE *yyin;
 "w["                      { return WHILE; }
 "f["                      { return FOR; }
 "d["                      { return FUNC; }
+"i["                      { return IF; }
+"e["                      { return ELSE; }
+"ie["                     { return IFELSE; }
 "->"                      { return FUNCSTART; }
 "]"                       { return FUNCEND; }
 

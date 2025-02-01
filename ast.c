@@ -97,6 +97,24 @@ void print_ast(astnode_t *node, int depth) {
       printf("Child node 4 (for body):\n");
       print_ast(node->child[3], depth+1);
       break;
+    case NODE_IF:
+      printf("IF statement\n"); 
+      for (int i = 0; i < depth; i++) printf("  ");
+      printf("Child node 1 (condition):\n");
+      print_ast(node->child[0], depth+1);
+      for (int i = 0; i < depth; i++) printf("  ");
+      printf("Child node 2 (if's body):\n");
+      print_ast(node->child[1], depth+1);
+      break;
+     case NODE_IFELSE:
+      printf("IF-ELSE statement\n"); 
+      for (int i = 0; i < depth; i++) printf("  ");
+      printf("Child node 1 (condition):\n");
+      print_ast(node->child[0], depth+1);
+      for (int i = 0; i < depth; i++) printf("  ");
+      printf("Child node 2 (if-else's body):\n");
+      print_ast(node->child[1], depth+1);
+      break;
     default: printf("UNKNOWN NODE\n");
   }
 
@@ -129,6 +147,8 @@ void free_ast(astnode_t *node) {
 static Value evaluate_expr(astnode_t *node);
 void evaluate_while(astnode_t *node);
 void evaluate_for(astnode_t *node);
+void evaluate_if(astnode_t *node);
+void evaluate_ifelse(astnode_t *node);
 
 void evaluate_ast(astnode_t *node) {
   if (!node) {
@@ -185,6 +205,14 @@ void evaluate_ast(astnode_t *node) {
 
     case NODE_FOR:
       evaluate_for(node);
+      break;
+
+    case NODE_IF:
+      evaluate_if(node);
+      break;
+
+    case NODE_IFELSE:
+      evaluate_ifelse(node);
       break;
 
     default:
@@ -436,4 +464,64 @@ void evaluate_for(astnode_t *node) {
     evaluate_ast(body);
     evaluate_ast(update);
   }
+}
+
+void evaluate_if(astnode_t *node) {
+  if (!node || node->type != NODE_IF) {
+    fprintf(stderr, "Error: Invalid if statement node\n");
+    exit(EXIT_FAILURE);
+  }
+
+  astnode_t *condition = node->child[0];
+  astnode_t *body = node->child[1];
+
+  if (!condition || !body) {
+    fprintf(stderr, "Error: If statement missing condition or body\n");
+    exit(EXIT_FAILURE);
+  }
+
+  Value cond_value = evaluate_expr(condition);
+
+  if (cond_value.type != TYPE_BOOL) {
+    fprintf(stderr, "Error: If statement condition must evaluate to a boolean\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if (cond_value.data.int_val) {
+    evaluate_ast(body);
+  }
+}
+
+void evaluate_ifelse(astnode_t *node) {
+  if (!node || node->type != NODE_IFELSE) {
+    fprintf(stderr, "Error: Invalid if-else statement node\n");
+    exit(EXIT_FAILURE);
+  }
+
+  astnode_t *condition = node->child[0];
+
+  if (!condition) {
+    fprintf(stderr, "Error: If-else statement missing condition\n");
+    exit(EXIT_FAILURE);
+  }
+
+  Value cond_value = evaluate_expr(condition);
+
+  if (cond_value.type != TYPE_BOOL) {
+    fprintf(stderr, "Error: If statement condition must evaluate to a boolean\n");
+    exit(EXIT_FAILURE);
+  }
+  astnode_t *body;
+
+  if (cond_value.data.int_val) {
+    body = node->child[1];
+  } else {
+    body = node->child[2];
+  }
+
+  if (!body) {
+    fprintf(stderr, "Error: If-else statement missing body\n");
+    exit(EXIT_FAILURE);
+  }
+  evaluate_ast(body);
 }
