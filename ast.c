@@ -207,6 +207,26 @@ void evaluate_ast(astnode_t *node) {
       }
       break;
 
+    case NODE_READ:
+      const char* varName = node->data.id;
+      printf("What do you want this time? ...\n");
+      fflush(stdout);
+
+      char buffer[256];
+      if (!fgets(buffer, sizeof(buffer), stdin)) {
+          fprintf(stderr, "Error reading input.\n");
+          exit(EXIT_FAILURE);
+      }
+      // Remove trailing newline if present
+      char *newline = strchr(buffer, '\n');
+      if (newline) *newline = '\0';
+
+      // Always store it as string
+      put_symbol_string(varName, buffer);
+      break;
+
+    // TODO: Create a input() function-like expr. to use in runtime
+
     case NODE_WHILE:
       evaluate_while(node);
       break;

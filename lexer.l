@@ -48,6 +48,8 @@ extern FILE *yyin;
 "->"                      { return FUNCSTART; }
 "]"                       { return FUNCEND; }
 
+"what? ->"                { return READ; }
+
 \/\*[^*]*\*+([^/*][^*]*\*+)*\/    { /* ignore block comments */ }
 "//".*                            { /* ignore single line comments */ }
 [ \t\n]                   { /* ignore whitespace */ }

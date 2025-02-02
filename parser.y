@@ -27,6 +27,7 @@ astnode_t *root_ast;
 %token PRINT ASSIGN SEMICOLON COLON
 %token PLUS MINUS MUL DIV EXP
 %token OPENPAR CLOSEPAR
+%token READ
 
 /* Declare types for our new non-terminals */
 %type <ast> stmt stmts expr term factor 
@@ -118,6 +119,11 @@ stmt
         $$ = astnode_new(NODE_FUNCCALL);
         $$->data.id = $1;
         astnode_add_child($$, $3, 0);
+      }
+    | READ IDENTIFIER
+      {
+        $$ = astnode_new(NODE_READ);
+        $$->data.id = $2;
       }
     ;
 

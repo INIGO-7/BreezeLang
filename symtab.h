@@ -46,6 +46,7 @@ enum NodeType {
   NODE_FUNC,
   NODE_FUNCCALL,
   NODE_RETURN,
+  NODE_READ,
   NODE_ERROR
 };
 
