@@ -148,6 +148,26 @@ SymbolNode *put_symbol_bool(const char *name, int value) {
   return node;
 }
 
+SymbolNode *put_symbol_function(const char *name, astnode_t *func_ast) {
+    SymbolNode *node = lookup_symbol(name);
+    if (node != NULL) {
+        /* If node existed, then overwrite previous instance*/
+        /*TODO: If we define a function with the name of an existing non-function symbol, then we would have to reallocate space for the new function*/ 
+        node->type = TYPE_FUNCTION;
+        node->data.func_ast = func_ast;
+        node->next = symbol_table;
+        symbol_table = node;
+    } else {
+        node = malloc(sizeof(SymbolNode));
+        node->name = strdup(name);
+        node->type = TYPE_FUNCTION;
+        node->data.func_ast = func_ast;
+        node->next = symbol_table;
+        symbol_table = node;
+    }
+    return node;
+}
+
 void free_symbol_table(void) {
   SymbolNode *current = symbol_table;
   while (current != NULL) {

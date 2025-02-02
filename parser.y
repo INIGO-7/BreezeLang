@@ -31,6 +31,7 @@ astnode_t *root_ast;
 /* Declare types for our new non-terminals */
 %type <ast> stmt stmts expr term factor 
 %type <ast> for_init for_update
+%type <ast> params args
 
 /* Operator precedence and associativity */
 %right UMINUS
@@ -105,7 +106,21 @@ stmt
         astnode_add_child($$, $4, 1);
         astnode_add_child($$, $7, 2);
       }
+    | FUNC IDENTIFIER OPENPAR params CLOSEPAR FUNCSTART stmts FUNCEND
+      {
+        $$ = astnode_new(NODE_FUNC);
+        $$->data.id = $2;
+        astnode_add_child($$, $4, 0);
+        astnode_add_child($$, $7, 1);
+      }
+    | IDENTIFIER OPENPAR args CLOSEPAR 
+      {
+        $$ = astnode_new(NODE_FUNCCALL);
+        $$->data.id = $1;
+        astnode_add_child($$, $3, 0);
+      }
     ;
+
 
 for_init
     : IDENTIFIER ASSIGN expr
@@ -124,6 +139,62 @@ for_update
         astnode_add_child($$, $3, 0);
       }
     ;
+
+params
+    : /* no parameters option */
+      {
+        /* Instead of returning null, we return a node with no children
+        Just so we have a valid ast node returned.*/
+        $$ = astnode_new(NODE_STMTS);
+      }
+    | IDENTIFIER
+      {
+        astnode_t* paramNode = astnode_new(NODE_ID);
+        paramNode->data.id = $1;
+        
+        $$ = astnode_new(NODE_STMTS);
+        astnode_add_child($$, paramNode, 0);
+      }
+    | params COLON IDENTIFIER
+      {
+        astnode_t* paramNode = astnode_new(NODE_ID);
+        paramNode->data.id = $3;
+
+        int i = 0;
+        while ($1->child[i] != NULL && i < MAXCHILDREN) i++;
+        if (i >= MAXCHILDREN) {
+          fprintf(stderr, "Too many parameters!\n");
+          exit(EXIT_FAILURE);
+        }
+        astnode_add_child($1, paramNode, i);
+
+        $$ = $1;
+      }
+    ;
+
+args
+  : /* no arguments */
+    {
+      $$ = astnode_new(NODE_STMTS); /* empty container node */
+    }
+  | expr
+    {
+      astnode_t* listNode = astnode_new(NODE_STMTS);
+      astnode_add_child(listNode, $1, 0);
+      $$ = listNode;
+    }
+  | args COLON expr
+    {
+      int i = 0;
+      while ($1->child[i] != NULL && i < MAXCHILDREN) i++;
+      if (i >= MAXCHILDREN) {
+        fprintf(stderr, "Too many arguments!\n");
+        exit(EXIT_FAILURE);
+      }
+      astnode_add_child($1, $3, i);
+      $$ = $1;
+    }
+  ;
 
 expr
     : expr OR expr

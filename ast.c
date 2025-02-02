@@ -106,7 +106,7 @@ void print_ast(astnode_t *node, int depth) {
       printf("Child node 2 (if's body):\n");
       print_ast(node->child[1], depth+1);
       break;
-     case NODE_IFELSE:
+    case NODE_IFELSE:
       printf("IF-ELSE statement\n"); 
       for (int i = 0; i < depth; i++) printf("  ");
       printf("Child node 1 (condition):\n");
@@ -115,6 +115,8 @@ void print_ast(astnode_t *node, int depth) {
       printf("Child node 2 (if-else's body):\n");
       print_ast(node->child[1], depth+1);
       break;
+
+    //TODO: Add function nodes!
     default: printf("UNKNOWN NODE\n");
   }
 
@@ -149,6 +151,8 @@ void evaluate_while(astnode_t *node);
 void evaluate_for(astnode_t *node);
 void evaluate_if(astnode_t *node);
 void evaluate_ifelse(astnode_t *node);
+void evaluate_func(astnode_t *node);
+void evaluate_funccall(astnode_t *node);
 
 void evaluate_ast(astnode_t *node) {
   if (!node) {
@@ -181,7 +185,11 @@ void evaluate_ast(astnode_t *node) {
           break;
         case TYPE_BOOL:
           put_symbol_bool(node->data.id, value.data.int_val);
-          break;
+          break;        
+
+        default:
+          fprintf(stderr, "Error: assignment's type cannot be recognized. Type is: '%d'.\n", value.type);
+          exit(EXIT_FAILURE);
       }
       break;
 
@@ -213,6 +221,14 @@ void evaluate_ast(astnode_t *node) {
 
     case NODE_IFELSE:
       evaluate_ifelse(node);
+      break;
+
+    case NODE_FUNC:
+      evaluate_func(node);
+      break;
+
+    case NODE_FUNCCALL:
+      evaluate_funccall(node);
       break;
 
     default:
@@ -265,7 +281,7 @@ static Value evaluate_expr(astnode_t *node) {
           fprintf(stderr, "Error, the type of the variable isn't recognized\n");
           exit(EXIT_FAILURE);
       }
-    
+
 
     case NODE_ADD:
       left = evaluate_expr(node->child[0]);
@@ -524,4 +540,79 @@ void evaluate_ifelse(astnode_t *node) {
     exit(EXIT_FAILURE);
   }
   evaluate_ast(body);
+}
+
+void evaluate_func(astnode_t * node) {
+  const char *funcName = node->data.id;
+
+  SymbolNode *symbol = lookup_symbol(funcName);
+  if (symbol) {
+    fprintf(stderr, "Error: this function has already been defined in the script!\n");
+    exit(EXIT_FAILURE);
+  } else {
+    put_symbol_function(funcName, node);
+  }
+}
+
+void evaluate_funccall(astnode_t * node) {
+  // 1. Look up the function by name
+  SymbolNode *fnSymbol = lookup_symbol(node->data.id);
+  if (!fnSymbol || fnSymbol->type != TYPE_FUNCTION) {
+    fprintf(stderr, "Error: '%s' is not defined as a function.\n", node->data.id);
+    exit(EXIT_FAILURE);
+  }
+
+  // 2. Retrieve the function AST
+  astnode_t *funcDefNode = fnSymbol->data.func_ast; // This is the NODE_FUNCDEF
+
+  astnode_t *paramList = funcDefNode->child[0];
+  astnode_t *funcBody  = funcDefNode->child[1];
+
+  // 3. Evaluate arguments (the child[0] of the call node)
+  astnode_t *argListNode = node->child[0]; // This is the arg_list (NODE_STMTS)
+  // We'll gather them in an array or a small vector
+  Value argValues[MAXCHILDREN] = {0};
+  int argCount = 0;
+  for (int i = 0; i < MAXCHILDREN; i++) {
+    if (!argListNode->child[i]) break;
+    argValues[i] = evaluate_expr(argListNode->child[i]);
+    argCount++;
+  }
+
+  // 4. Bind arguments to parameters
+  for (int i = 0; i < argCount; i++) {
+    astnode_t *paramNode = paramList->child[i];
+    if (!paramNode) {
+      fprintf(stderr, "Error: Too many arguments for function '%s'.\n", node->data.id);
+      exit(EXIT_FAILURE);
+    }
+    const char *paramName = paramNode->data.id;
+    Value v = argValues[i];
+    // put_symbol_xxx paramName with v
+    switch (v.type) {
+      case TYPE_INT:
+        put_symbol_int(paramName, v.data.int_val);
+        break;
+      case TYPE_FLOAT:
+        put_symbol_float(paramName, v.data.float_val);
+        break;
+      case TYPE_STRING:
+        put_symbol_string(paramName, v.data.str_val);
+        break;
+      case TYPE_BOOL:
+        put_symbol_bool(paramName, v.data.int_val);
+        break;
+
+      default:
+        fprintf(stderr, "Error: argument's type cannot be recognized. Type is: '%d'.\n", v.type);
+        exit(EXIT_FAILURE);
+    }
+  }
+  // TODO: Check if there are leftover parameters that didn't get an argument
+  // or leftover arguments with no matching param
+
+  // 5. Evaluate the function body
+  evaluate_ast(funcBody);
+
+  // TODO: Handle the logic of a return mechanism
 }
