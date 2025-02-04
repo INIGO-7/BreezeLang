@@ -22,6 +22,9 @@ extern FILE *yyin;
 ">="                      { return GE; }
 
 "return"                  { return FUNCRET; }
+"len"                     { return STRLEN; }
+"break"                   { return BREAK; }
+"continue"                { return CONTINUE; }
 
 [0-9]+\.[0-9]+            { yylval.dec = atof(yytext); return FLOAT; }
 [0-9]+                    { yylval.number = atoi(yytext); return INT; }
@@ -31,6 +34,7 @@ extern FILE *yyin;
 "+"                       { return PLUS; }
 "-"                       { return MINUS; }
 "/"                       { return DIV; }
+"//"                      { return QUOTIENT; }
 "*"                       { return MUL; }
 "**"                      { return EXP; }
 

@@ -18,11 +18,51 @@ Value create_int_value(int i) {
   return v;
 }
 
-Value create_str_value(const char* s) {
+char *process_escapes(const char *input) {
+  if (!input) return NULL;
+
+  char *output = malloc(strlen(input) + 1);
+  char *dest = output;
+
+  while (*input) {
+    if (*input == '\\') {
+      input++;
+      switch (*input) {
+        case 'n': *dest++ = '\n'; break;
+        case 't': *dest++ = '\t'; break;
+        case '\\': *dest++ = '\\'; break;
+        case '"': *dest++ = '"'; break;
+        default:  // Handle unknown escapes
+          fprintf(stderr, "Warning: Unknown escape \\%c\n", *input);
+          *dest++ = *input;
+      }
+    } else {
+      *dest++ = *input;
+    }
+    input++;
+  }
+  *dest = '\0';
+  return output;
+}
+
+Value create_str_value(const char *s) {
   Value v;
   v.type = TYPE_STRING;
-  v.data.str_val = strdup(s);
-  return v;
+  // Validate that input is enclosed in quotes
+  if (s[0] != '"' || s[strlen(s)-1] != '"') {
+    v.data.str_val = process_escapes(s);
+    return v;
+
+  } else {
+    // Remove surrounding quotes and process escapes
+    char *temp = strdup(s + 1);          // Skip opening "
+    temp[strlen(temp)-1] = '\0';             // Remove trailing "
+
+    v.data.str_val = process_escapes(temp);  // Handle \n, \t, etc.
+    free(temp);
+
+    return v;
+  }
 }
 
 Value create_bool_value(int i) {
@@ -194,16 +234,28 @@ void evaluate_ast(astnode_t *node) {
       break;
 
     case NODE_PRINT:
-      // Evaluate and print the expression
-      if (node->child[0]) {
-        Value value = evaluate_expr(node->child[0]);
-        if (value.type == TYPE_FLOAT) printf("%f\n", value.data.float_val);
-        else if (value.type == TYPE_INT) printf("%d\n", (int)value.data.int_val);
-        else if (value.type == TYPE_STRING) printf("%s\n", value.data.str_val);
-        else if (value.type == TYPE_BOOL) printf("%s\n", value.data.int_val ? "true" : "false");
-      } else {
-        fprintf(stderr, "Error: print node doesn't have children. This means that the print function does not know what to print.\n");
-        exit(EXIT_FAILURE); 
+      if (!node->child[0]) {
+        fprintf(stderr, "Error: print node has no arguments\n");
+        exit(EXIT_FAILURE);
+      }
+      
+      astnode_t *args = node->child[0];
+      for (int i = 0; i < MAXCHILDREN; i++) {
+        if (args->child[i]) {
+          Value value = evaluate_expr(args->child[i]);
+          
+          // Handle different types
+          if (value.type == TYPE_STRING) {
+            // Print string WITHOUT quotes
+            printf("%s", value.data.str_val);
+          } else if (value.type == TYPE_FLOAT) {
+            printf("%f", value.data.float_val);
+          } else if (value.type == TYPE_INT) {
+            printf("%d", value.data.int_val);
+          } else if (value.type == TYPE_BOOL) {
+            printf("%s", value.data.int_val ? "true" : "false");
+          }
+        }
       }
       break;
 
@@ -416,33 +468,25 @@ static Value evaluate_expr(astnode_t *node) {
 
       } else if (node->data.bool_op == OP_EQ) {
 
-        if(left.type == TYPE_INT && right.type == TYPE_INT) {
-          return create_bool_value((left.data.int_val == right.data.int_val) ? 1 : 0);
-
-        } else if(left.type == TYPE_STRING && right.type == TYPE_STRING) {
+        if(left.type == TYPE_STRING && right.type == TYPE_STRING) {
           return create_bool_value(
             strcmp(left.data.str_val, right.data.str_val) == 0 ? 
             1 : 0
           );
 
         } else {
-          fprintf(stderr, "Error: Comparison operation only supported in string and integer types");
-          exit(EXIT_FAILURE);
+          return create_bool_value((left.data.int_val == right.data.int_val) ? 1 : 0);
         }
       } else if (node->data.bool_op == OP_NEQ) {
 
-        if(left.type == TYPE_INT && right.type == TYPE_INT) {
-          return create_bool_value((left.data.int_val != right.data.int_val) ? 1 : 0);
-
-        } else if(left.type == TYPE_STRING && right.type == TYPE_STRING) {
+        if(left.type == TYPE_STRING && right.type == TYPE_STRING) {
           return create_bool_value(
             strcmp(left.data.str_val, right.data.str_val) == 1 ? 
             1 : 0
           );
 
         } else {
-          fprintf(stderr, "Error: Comparison operation only supported in string and integer types");
-          exit(EXIT_FAILURE);
+          return create_bool_value((left.data.int_val == right.data.int_val) ? 0 : 1);
         }
       } else if (node->data.bool_op == OP_LT) { 
         return create_bool_value((left.data.int_val < right.data.int_val) ? 1 : 0);
@@ -501,7 +545,7 @@ static Value evaluate_expr(astnode_t *node) {
           exit(EXIT_FAILURE);
       }
 
-      if(slice->child[1]) {
+      if (slice->child[1]) {
         // TODO: Check that slice2 is an int
         int slice2 = evaluate_expr(slice->child[1]).data.int_val;
         if (slice2 < 0 || slice2 >= length) {
@@ -531,8 +575,22 @@ static Value evaluate_expr(astnode_t *node) {
         return create_str_value(singleChar);
       }
 
+    case NODE_STRLEN:
+      symbol = lookup_symbol(node->data.id);
+      if (!symbol) {
+        fprintf(stderr, "Error: Undefined variable '%s'\n", node->data.id);
+        exit(EXIT_FAILURE);
+      } else if (symbol->type != TYPE_STRING) {
+        fprintf(stderr, "Error: Variable '%s' must be of type string!\n", node->data.id);
+        exit(EXIT_FAILURE);
+      } else if (symbol->data.string_val == NULL) {
+        fprintf(stderr, "Error: Variable '%s' is uninitialized (NULL)\n", node->data.id);
+        exit(EXIT_FAILURE);
+      }
+      return create_int_value(strlen(symbol->data.string_val));
+
     default:
-      fprintf(stderr, "Error: Unknown node type in evaluation. Maybe you should use evaluate_ast() instead of evaluate_expr()?\n");
+      fprintf(stderr, "Error: Unknown node type in evaluation. Maybe you should use evaluate_ast() instead of evaluate_expr()? Node type: %d\n", node->type);
       exit(EXIT_FAILURE);
   }
 }
@@ -557,6 +615,28 @@ Value evaluate_funcbody(astnode_t* node) {
   }
   // return 0 if no return was found
   return create_int_value(0);
+}
+
+void evaluate_loop(astnode_t* node){
+  if (node->type == NODE_STMTS && node) {
+    // Evaluate all statements in sequence
+    for (int i = 0; i < MAXCHILDREN; i++) {
+      if (!node->child[i]) continue;
+      if (node->child[i]->type == NODE_BREAK) {
+        // When break is reached, terminate loop execution
+        break;
+      } else if(node->child[i]->type == NODE_CONTINUE) {
+        // When continue is reached, go to next loop
+        continue;
+      } else {
+        // Otherwise, evaluate this existing child and move on.
+        evaluate_ast(node->child[i]);
+      }
+    }
+  } else {
+    fprintf(stderr, "Error: Invalid function body.\n");
+    exit(EXIT_FAILURE); 
+  }
 }
 
 void evaluate_while(astnode_t *node) {
@@ -584,7 +664,7 @@ void evaluate_while(astnode_t *node) {
     if (!cond_value.data.int_val) {
       break;
     }
-    evaluate_ast(body);
+    evaluate_loop(body);
   }
 }
 
@@ -617,7 +697,7 @@ void evaluate_for(astnode_t *node) {
     if (!cond_value.data.int_val) {
       break;
     }
-    evaluate_ast(body);
+    evaluate_loop(body);
     evaluate_ast(update);
   }
 }

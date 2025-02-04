@@ -27,7 +27,8 @@ astnode_t *root_ast;
 %token PRINT ASSIGN SEMICOLON COMMA COLON
 %token PLUS MINUS MUL DIV EXP
 %token OPENPAR CLOSEPAR OPENBRKT CLOSEBRKT
-%token READ
+%token READ STRLEN
+%token BREAK CONTINUE
 
 /* Declare types for our new non-terminals */
 %type <ast> stmt stmts expr term factor 
@@ -41,7 +42,7 @@ astnode_t *root_ast;
 %left AND
 %left EQ NEQ LT LE GT GE
 %left PLUS MINUS
-%left MUL DIV
+%left MUL DIV QUOTIENT
 %right EXP
 
 %%
@@ -75,7 +76,7 @@ stmt
         $$->data.id = $1;
         astnode_add_child($$, $3, 0);
       }
-    | PRINT expr
+    | PRINT args
       {
         $$ = astnode_new(NODE_PRINT);
         astnode_add_child($$, $2, 0);
@@ -307,6 +308,14 @@ expr
         $$ = astnode_new(NODE_BOOL);
         $$->data.boolean = 0;
       }
+    | BREAK
+      {
+        $$ = astnode_new(NODE_BREAK);
+      }
+    | CONTINUE
+      {
+        $$ = astnode_new(NODE_CONTINUE);
+      }
     ;
 
 term
@@ -395,6 +404,11 @@ factor
         $$ = astnode_new(NODE_INDEX);
         $$->data.id = $1;
         astnode_add_child($$, $3, 0);
+      }
+    | STRLEN OPENPAR IDENTIFIER CLOSEPAR
+      {
+        $$ = astnode_new(NODE_STRLEN);
+        $$->data.id = $3;
       }
     ;
 
