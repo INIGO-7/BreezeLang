@@ -20,13 +20,13 @@ astnode_t *root_ast;
 %token <number> INT
 %token <dec> FLOAT
 %token <string> IDENTIFIER STRING
-%token WHILE FOR FUNC IF ELSE IFELSE FUNCSTART FUNCEND
+%token WHILE FOR FUNC IF ELSE IFELSE FUNCSTART FUNCEND FUNCRET
 %token TRUE FALSE
 %token AND OR NOT
 %token EQ NEQ LT GT LE GE
 %token PRINT ASSIGN SEMICOLON COLON
 %token PLUS MINUS MUL DIV EXP
-%token OPENPAR CLOSEPAR
+%token OPENPAR CLOSEPAR OPENBRKT CLOSEBRKT
 %token READ
 
 /* Declare types for our new non-terminals */
@@ -114,16 +114,19 @@ stmt
         astnode_add_child($$, $4, 0);
         astnode_add_child($$, $7, 1);
       }
-    | IDENTIFIER OPENPAR args CLOSEPAR 
-      {
-        $$ = astnode_new(NODE_FUNCCALL);
-        $$->data.id = $1;
-        astnode_add_child($$, $3, 0);
-      }
     | READ IDENTIFIER
       {
         $$ = astnode_new(NODE_READ);
         $$->data.id = $2;
+      }
+    | expr    // Temporary fallback
+      {
+        $$ = $1;
+      }
+    | FUNCRET expr
+      {
+        $$ = astnode_new(NODE_FUNCRET);
+        astnode_add_child($$, $2, 0);
       }
     ;
 
@@ -368,29 +371,19 @@ factor
           exit(EXIT_FAILURE);
         }
       }
-    ;
-
-/* Handle unary minus with higher precedence
-    | MINUS factor %prec UMINUS
+    | IDENTIFIER OPENPAR args CLOSEPAR 
       {
-        if ($2->type == NODE_INT)
-        {
-           $$ = astnode_new(NODE_INT);
-           $$->data.num = -($2->data.num);
-        }
-        else if ($2->type == NODE_FLOAT)
-        {
-           $$ = astnode_new(NODE_FLOAT);
-           $$->data.dec = -($2->data.dec);
-        }
-        else
-        {
-           // You could decide how to handle unary minus on non-numeric
-           $$ = astnode_new(NODE_SUB);
-           astnode_add_child($$, $2, 0);
-        }
+        $$ = astnode_new(NODE_FUNCCALL);
+        $$->data.id = $1;
+        astnode_add_child($$, $3, 0);
       }
-    ;*/
+    | IDENTIFIER OPENBRKT expr CLOSEBRKT
+      {
+        $$ = astnode_new(NODE_INDEX);
+        $$->data.id = $1;
+        astnode_add_child($$, $3, 0);
+      }
+    ;
 
 %%
 

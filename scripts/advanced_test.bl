@@ -1,13 +1,16 @@
-d[ square_or_sum(a, is_squared) ->
-  i[ is_squared ->
+d{ square_or_sum(a, is_squared) ->
+  i{ is_squared ->
     a = a ** 2;
-  e[ ->
+  e{ ->
     a = a + 1;
-  ];
-  print "if is_squared is true, a = 9. If not, a = 4. is_squared:";
-  print is_squared;
-  print "a's value:";
-  print a;
-];
+  };
+  return a;
+};
 
-square_or_sum(3, false);
+print "if is_squared is true, a = 9. If not, a = 4. is_squared:";
+is_sq = true;
+print is_sq;
+b = 3;
+print "a's value:";
+c = square_or_sum(b, is_sq);
+print c;

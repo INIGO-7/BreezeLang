@@ -152,7 +152,7 @@ void evaluate_for(astnode_t *node);
 void evaluate_if(astnode_t *node);
 void evaluate_ifelse(astnode_t *node);
 void evaluate_func(astnode_t *node);
-void evaluate_funccall(astnode_t *node);
+Value evaluate_funccall(astnode_t *node);
 
 void evaluate_ast(astnode_t *node) {
   if (!node) {
@@ -245,10 +245,6 @@ void evaluate_ast(astnode_t *node) {
 
     case NODE_FUNC:
       evaluate_func(node);
-      break;
-
-    case NODE_FUNCCALL:
-      evaluate_funccall(node);
       break;
 
     default:
@@ -433,10 +429,75 @@ static Value evaluate_expr(astnode_t *node) {
         exit(EXIT_FAILURE);
       }
 
+    case NODE_FUNCCALL:
+      return evaluate_funccall(node);
+      break;
+
+    case NODE_FUNCRET:
+      if(node->child[0]) {
+        return evaluate_expr(node->child[0]);
+      } else {
+        fprintf(stderr, "Error: There isn't an expression associated to this return statement.\n");
+        exit(EXIT_FAILURE);
+      }
+
+    case NODE_INDEX:
+      // TODO: Handle other types for index values (throw err)
+      int idx = evaluate_expr(node->child[0]).data.int_val;
+      SymbolNode *symbol = lookup_symbol(node->data.id);
+
+      if (!symbol) {
+        fprintf(stderr, "Error: Undefined variable '%s'\n", node->data.id);
+        exit(EXIT_FAILURE);
+      }
+
+      if (symbol->type == TYPE_STRING) {
+        const char *str = symbol->data.string_val;
+        int length = strlen(str);
+
+        if (idx < 0 || idx >= length) {
+            fprintf(stderr, "Error: string index %d out of range (length %d).\n", idx, length);
+            exit(EXIT_FAILURE);
+        }
+
+        // Build a new single‐character string
+        char singleChar[2];
+        singleChar[0] = str[idx];
+        singleChar[1] = '\0';
+
+        return create_str_value(singleChar);
+      }
+      else {
+          fprintf(stderr, "Error: indexing is only supported on strings for now.\n");
+          exit(EXIT_FAILURE);
+      }
+
     default:
       fprintf(stderr, "Error: Unknown node type in evaluation. Maybe you should use evaluate_ast() instead of evaluate_expr()?\n");
       exit(EXIT_FAILURE);
   }
+}
+
+Value evaluate_funcbody(astnode_t* node) {
+  if (node->type == NODE_STMTS && node) {
+    // Evaluate all statements in sequence
+    for (int i = 0; i < MAXCHILDREN; i++) {
+      if (!node->child[i]) continue;
+      if (node->child[i]->type == NODE_FUNCRET) {
+        // When a return is reached, stop funcbody evaluation and 
+        // yield return's associated expression
+          return evaluate_expr(node->child[i]);
+      } else {
+        // Otherwise, evaluate this existing child and move on.
+        evaluate_ast(node->child[i]);
+      }
+    }
+  } else {
+    fprintf(stderr, "Error: Invalid function body.\n");
+    exit(EXIT_FAILURE); 
+  }
+  // return 0 if no return was found
+  return create_int_value(0);
 }
 
 void evaluate_while(astnode_t *node) {
@@ -574,7 +635,7 @@ void evaluate_func(astnode_t * node) {
   }
 }
 
-void evaluate_funccall(astnode_t * node) {
+Value evaluate_funccall(astnode_t * node) {
   // 1. Look up the function by name
   SymbolNode *fnSymbol = lookup_symbol(node->data.id);
   if (!fnSymbol || fnSymbol->type != TYPE_FUNCTION) {
@@ -628,11 +689,19 @@ void evaluate_funccall(astnode_t * node) {
         exit(EXIT_FAILURE);
     }
   }
+
   // TODO: Check if there are leftover parameters that didn't get an argument
   // or leftover arguments with no matching param
 
-  // 5. Evaluate the function body
-  evaluate_ast(funcBody);
+  // 5. Evaluate the function body, storing the optional return expr.
+  Value ret = evaluate_funcbody(funcBody);
 
-  // TODO: Handle the logic of a return mechanism
+  // 6. Handle return statement (if available)
+  if(ret.data.int_val != 0) {
+    return ret;
+  } else {
+    // This will be returned when no return was found,
+    // and when the actual return value is 0.
+    return create_int_value(0);
+  }
 }
