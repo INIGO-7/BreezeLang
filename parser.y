@@ -24,7 +24,7 @@ astnode_t *root_ast;
 %token TRUE FALSE
 %token AND OR NOT
 %token EQ NEQ LT GT LE GE
-%token PRINT ASSIGN SEMICOLON COLON
+%token PRINT ASSIGN SEMICOLON COMMA COLON
 %token PLUS MINUS MUL DIV EXP
 %token OPENPAR CLOSEPAR OPENBRKT CLOSEBRKT
 %token READ
@@ -32,7 +32,7 @@ astnode_t *root_ast;
 /* Declare types for our new non-terminals */
 %type <ast> stmt stmts expr term factor 
 %type <ast> for_init for_update
-%type <ast> params args
+%type <ast> params args slice
 
 /* Operator precedence and associativity */
 %right UMINUS
@@ -86,7 +86,7 @@ stmt
         astnode_add_child($$, $2, 0);  // condition (now expr)
         astnode_add_child($$, $4, 1);  // body
       }
-    | FOR for_init COLON expr COLON for_update FUNCSTART stmts FUNCEND
+    | FOR for_init COMMA expr COMMA for_update FUNCSTART stmts FUNCEND
       {
         $$ = astnode_new(NODE_FOR);
         astnode_add_child($$, $2, 0);  // for init
@@ -164,7 +164,7 @@ params
         $$ = astnode_new(NODE_STMTS);
         astnode_add_child($$, paramNode, 0);
       }
-    | params COLON IDENTIFIER
+    | params COMMA IDENTIFIER
       {
         astnode_t* paramNode = astnode_new(NODE_ID);
         paramNode->data.id = $3;
@@ -192,7 +192,7 @@ args
       astnode_add_child(listNode, $1, 0);
       $$ = listNode;
     }
-  | args COLON expr
+  | args COMMA expr
     {
       int i = 0;
       while ($1->child[i] != NULL && i < MAXCHILDREN) i++;
@@ -204,6 +204,19 @@ args
       $$ = $1;
     }
   ;
+
+slice
+    : expr
+      {
+        $$ = astnode_new(NODE_SLICE);
+        astnode_add_child($$, $1, 0);
+      }
+    | expr COLON expr
+      {
+        $$ = astnode_new(NODE_SLICE);
+        astnode_add_child($$, $1, 0);
+        astnode_add_child($$, $3, 1);
+      }
 
 expr
     : expr OR expr
@@ -377,7 +390,7 @@ factor
         $$->data.id = $1;
         astnode_add_child($$, $3, 0);
       }
-    | IDENTIFIER OPENBRKT expr CLOSEBRKT
+    | IDENTIFIER OPENBRKT slice CLOSEBRKT
       {
         $$ = astnode_new(NODE_INDEX);
         $$->data.id = $1;

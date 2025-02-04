@@ -48,6 +48,7 @@ enum NodeType {
   NODE_FUNCRET,
   NODE_READ,
   NODE_INDEX,
+  NODE_SLICE,
   NODE_ERROR
 };
 

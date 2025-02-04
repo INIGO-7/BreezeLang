@@ -410,12 +410,40 @@ static Value evaluate_expr(astnode_t *node) {
 
       if (node->data.bool_op == OP_AND) {
         return create_bool_value((left.data.int_val && right.data.int_val) ? 1 : 0);
+
       } else if (node->data.bool_op == OP_OR) {
         return create_bool_value((left.data.int_val || right.data.int_val) ? 1 : 0);
+
       } else if (node->data.bool_op == OP_EQ) {
-        return create_bool_value((left.data.int_val == right.data.int_val) ? 1 : 0);
+
+        if(left.type == TYPE_INT && right.type == TYPE_INT) {
+          return create_bool_value((left.data.int_val == right.data.int_val) ? 1 : 0);
+
+        } else if(left.type == TYPE_STRING && right.type == TYPE_STRING) {
+          return create_bool_value(
+            strcmp(left.data.str_val, right.data.str_val) == 0 ? 
+            1 : 0
+          );
+
+        } else {
+          fprintf(stderr, "Error: Comparison operation only supported in string and integer types");
+          exit(EXIT_FAILURE);
+        }
       } else if (node->data.bool_op == OP_NEQ) {
-        return create_bool_value((left.data.int_val != right.data.int_val) ? 1 : 0);
+
+        if(left.type == TYPE_INT && right.type == TYPE_INT) {
+          return create_bool_value((left.data.int_val != right.data.int_val) ? 1 : 0);
+
+        } else if(left.type == TYPE_STRING && right.type == TYPE_STRING) {
+          return create_bool_value(
+            strcmp(left.data.str_val, right.data.str_val) == 1 ? 
+            1 : 0
+          );
+
+        } else {
+          fprintf(stderr, "Error: Comparison operation only supported in string and integer types");
+          exit(EXIT_FAILURE);
+        }
       } else if (node->data.bool_op == OP_LT) { 
         return create_bool_value((left.data.int_val < right.data.int_val) ? 1 : 0);
       } else if (node->data.bool_op == OP_LE) {
@@ -442,34 +470,65 @@ static Value evaluate_expr(astnode_t *node) {
       }
 
     case NODE_INDEX:
-      // TODO: Handle other types for index values (throw err)
-      int idx = evaluate_expr(node->child[0]).data.int_val;
       SymbolNode *symbol = lookup_symbol(node->data.id);
 
       if (!symbol) {
         fprintf(stderr, "Error: Undefined variable '%s'\n", node->data.id);
         exit(EXIT_FAILURE);
+      } else if(symbol->type != TYPE_STRING) {
+        fprintf(stderr, "Error: indexing is only supported on strings for now.\n");
+        exit(EXIT_FAILURE);
+      }
+      
+      const char *str = symbol->data.string_val;
+      int length = strlen(str);
+
+      astnode_t *slice = node->child[0];
+
+      if (!slice || slice->type != NODE_SLICE){
+        fprintf(stderr, "Error: element inside braces has to be a slice!\n");
+        exit(EXIT_FAILURE);
+      } else if (!slice->child[0]) {
+        fprintf(stderr, "Error: we need at least one element inside the slice!\n");
+        exit(EXIT_FAILURE);
       }
 
-      if (symbol->type == TYPE_STRING) {
-        const char *str = symbol->data.string_val;
-        int length = strlen(str);
+      // TODO: Check that slice1 is an int
+      int slice1 = evaluate_expr(slice->child[0]).data.int_val;
 
-        if (idx < 0 || idx >= length) {
-            fprintf(stderr, "Error: string index %d out of range (length %d).\n", idx, length);
-            exit(EXIT_FAILURE);
+      if (slice1 < 0 || slice1 >= length) {
+          fprintf(stderr, "Error: string index %d out of range (length %d).\n", slice1, length);
+          exit(EXIT_FAILURE);
+      }
+
+      if(slice->child[1]) {
+        // TODO: Check that slice2 is an int
+        int slice2 = evaluate_expr(slice->child[1]).data.int_val;
+        if (slice2 < 0 || slice2 >= length) {
+          fprintf(stderr, "Error: string index %d out of range (length %d).\n", slice2, length);
+          exit(EXIT_FAILURE);
+        } else if (slice1 > slice2){
+          fprintf(stderr, "Error: slice val 1 '%d' shouldn't be greater than slice val 2 '%d'\n", slice1, slice2);
+          exit(EXIT_FAILURE);
         }
 
+        int slicelen = slice2 - slice1 + 1;
+        char finalStr[slicelen + 1];  // +1 for the terminating null
+        
+        strncpy(finalStr, str + slice1, slicelen);
+        
+        // Place terminating null at index slicelen
+        finalStr[slicelen] = '\0';
+        
+        return create_str_value(finalStr);
+
+      } else {
         // Build a new single‐character string
         char singleChar[2];
-        singleChar[0] = str[idx];
+        singleChar[0] = str[slice1];
         singleChar[1] = '\0';
 
         return create_str_value(singleChar);
-      }
-      else {
-          fprintf(stderr, "Error: indexing is only supported on strings for now.\n");
-          exit(EXIT_FAILURE);
       }
 
     default:

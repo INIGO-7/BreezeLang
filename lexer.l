@@ -41,7 +41,8 @@ extern FILE *yyin;
 
 "="                       { return ASSIGN; }
 ";"                       { return SEMICOLON; }
-","                       { return COLON; }
+","                       { return COMMA; }
+":"                       { return COLON; }
 
 "w{"                      { return WHILE; }
 "f{"                      { return FOR; }
