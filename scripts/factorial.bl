@@ -1,13 +1,13 @@
 what? -> x;
+print "Introduced number: ";
 print x;
-/*
-d[ factorial(x) ->
-  i[ x == 1 ->
+
+d{ factorial(x) ->
+  i{ x == 1 ->
     return 1;
-  e[ ->
+  e{ ->
     return x * factorial(x-1);
-  ];
-];
+  };
+};
 
 print factorial(5);
-*/
