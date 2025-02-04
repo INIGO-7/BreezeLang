@@ -50,7 +50,7 @@ astnode_t *root_ast;
 program
     : stmts 
       {
-        init_symbol_table();
+        init_scopes();
         root_ast = $1;
       }
     ;

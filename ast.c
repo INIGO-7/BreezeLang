@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "scope.h"
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
@@ -775,7 +776,7 @@ void evaluate_func(astnode_t * node) {
 }
 
 Value evaluate_funccall(astnode_t * node) {
-  // 1. Look up the function by name
+  // 1. Look up the function by name in the current scopes
   SymbolNode *fnSymbol = lookup_symbol(node->data.id);
   if (!fnSymbol || fnSymbol->type != TYPE_FUNCTION) {
     fprintf(stderr, "Error: '%s' is not defined as a function.\n", node->data.id);
@@ -783,64 +784,49 @@ Value evaluate_funccall(astnode_t * node) {
   }
 
   // 2. Retrieve the function AST
-  astnode_t *funcDefNode = fnSymbol->data.func_ast; // This is the NODE_FUNCDEF
+  astnode_t *funcDefNode = fnSymbol->data.func_ast; // NODE_FUNC
+  astnode_t *paramList = funcDefNode->child[0];     // parameters
+  astnode_t *funcBody  = funcDefNode->child[1];     // body (NODE_STMTS)
 
-  astnode_t *paramList = funcDefNode->child[0];
-  astnode_t *funcBody  = funcDefNode->child[1];
-
-  // 3. Evaluate arguments (the child[0] of the call node)
-  astnode_t *argListNode = node->child[0]; // This is the arg_list (NODE_STMTS)
-  // We'll gather them in an array or a small vector
+  // 3. Evaluate arguments (the child[0] of the call node is the argList)
+  astnode_t *argListNode = node->child[0];
   Value argValues[MAXCHILDREN] = {0};
   int argCount = 0;
   for (int i = 0; i < MAXCHILDREN; i++) {
     if (!argListNode->child[i]) break;
-    argValues[i] = evaluate_expr(argListNode->child[i]);
-    argCount++;
+    argValues[argCount++] = evaluate_expr(argListNode->child[i]);
   }
 
-  // 4. Bind arguments to parameters
+  // 4. push_scope for the new function call
+  push_scope();
+
+  // 5. Bind arguments to parameters in this new top scope
   for (int i = 0; i < argCount; i++) {
     astnode_t *paramNode = paramList->child[i];
     if (!paramNode) {
-      fprintf(stderr, "Error: Too many arguments for function '%s'.\n", node->data.id);
+      fprintf(stderr, "Error: too many arguments for function '%s'.\n", node->data.id);
       exit(EXIT_FAILURE);
     }
     const char *paramName = paramNode->data.id;
     Value v = argValues[i];
-    // put_symbol_xxx paramName with v
+    // store param in top scope
     switch (v.type) {
-      case TYPE_INT:
-        put_symbol_int(paramName, v.data.int_val);
-        break;
-      case TYPE_FLOAT:
-        put_symbol_float(paramName, v.data.float_val);
-        break;
-      case TYPE_STRING:
-        put_symbol_string(paramName, v.data.str_val);
-        break;
-      case TYPE_BOOL:
-        put_symbol_bool(paramName, v.data.int_val);
-        break;
-
+      case TYPE_INT:    put_symbol_int(paramName, v.data.int_val);       break;
+      case TYPE_FLOAT:  put_symbol_float(paramName, v.data.float_val);   break;
+      case TYPE_STRING: put_symbol_string(paramName, v.data.str_val);    break;
+      case TYPE_BOOL:   put_symbol_bool(paramName, v.data.int_val);      break;
       default:
-        fprintf(stderr, "Error: argument's type cannot be recognized. Type is: '%d'.\n", v.type);
+        fprintf(stderr, "Error: unrecognized parameter type.\n");
         exit(EXIT_FAILURE);
     }
   }
-
-  // TODO: Check if there are leftover parameters that didn't get an argument
-  // or leftover arguments with no matching param
-
-  // 5. Evaluate the function body, storing the optional return expr.
+  // TODO: check if there are leftover parameters with no arguments
+  // 6. Evaluate the function body, capturing the possible return value
   Value ret = evaluate_funcbody(funcBody);
 
-  // 6. Handle return statement (if available)
-  if(ret.data.int_val != 0) {
-    return ret;
-  } else {
-    // This will be returned when no return was found,
-    // and when the actual return value is 0.
-    return create_int_value(0);
-  }
+  // 7. pop_scope
+  pop_scope();
+
+  // 8. Return final value
+  return ret;
 }

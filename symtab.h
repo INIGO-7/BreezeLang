@@ -1,4 +1,3 @@
-// symtab.h
 #ifndef SYMTAB_H
 #define SYMTAB_H
 
@@ -69,50 +68,32 @@ enum BoolOpType {
 
 // AST Node Structure
 typedef struct astnode {
-  enum NodeType type;                             // Node type
+  enum NodeType type;                      
   union {
-    int num;                          // Integer values
-    float dec;                   // Decimal values
-    char *id;                         // Identifier (variable name)
-    char *str;                        // Strings
-    int boolean;                      // Boolean values (1 for true, 0 for false)
-    enum BoolOpType bool_op;         // Type of boolean operation
+    int num;              // For NODE_INT
+    float dec;            // For NODE_FLOAT
+    char *id;             // For NODE_ID, function names, etc.
+    char *str;            // For NODE_STRING
+    int boolean;          // For NODE_BOOL
+    enum BoolOpType bool_op; // For NODE_BOOL_OP
   } data;
-  struct astnode *child[MAXCHILDREN];   // Pointers to child nodes
+  struct astnode *child[MAXCHILDREN];
 } astnode_t;
 
+// Symbol data for each variable or function
 typedef union SymbolData {
   float float_val;
   int int_val;
   int bool_val;
   char* string_val;
-  astnode_t *func_ast;
+  astnode_t *func_ast;  // For storing function definitions
 } SymbolData;
 
 typedef struct SymbolNode {
-  char *name;           // Variable name
-  ValueType type;       // Type of the value
+  char *name;           // Variable or function name
+  ValueType type;       // e.g., TYPE_INT, TYPE_FLOAT, etc.
   SymbolData data;
   struct SymbolNode *next;
 } SymbolNode;
-
-// Initialize the symbol table
-void init_symbol_table(void);
-
-// Look up a symbol by name
-SymbolNode *lookup_symbol(const char *name);
-
-// Insert or update different symbols
-SymbolNode *put_symbol_int(const char *name, int value);
-SymbolNode *put_symbol_float(const char *name, float value);
-SymbolNode *put_symbol_string(const char *name, const char *value);
-SymbolNode *put_symbol_bool(const char *name, int value);
-SymbolNode *put_symbol_function(const char *name, astnode_t *func_ast);
-
-// Print a symbol's value
-void print_symbol(const char *name);
-
-// Free the table
-void free_symbol_table(void);
 
 #endif

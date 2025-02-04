@@ -8,5 +8,6 @@
 #include <string.h>
 #include "ast.h"
 #include "symtab.h"
+#include "scope.h"
 
 #endif
