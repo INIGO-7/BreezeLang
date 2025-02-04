@@ -1,0 +1,4 @@
+print "hello", "world\n", "!!!!!!!!!!";
+test_str = "iniguito";
+
+print len(test_str);

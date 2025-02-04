@@ -1,0 +1,95 @@
+what? -> str;
+min_frame_len = 0;
+start = 0;
+min_padding = 2;
+
+// ----------------------
+// FIRST PASS: find max word length
+// ----------------------
+f{ i=0, i<len(str), i=i+1 ->
+  
+  // if we hit a space, the substring before it is a word
+  i{ str[i] == " " ->
+    // only extract a word if we're not at consecutive spaces
+    i{ i != start ->
+      // substring should be str[start : i], 
+      // because i is the index of the space
+      word = str[start : i];  
+      
+      i{ len(word) > min_frame_len ->
+        min_frame_len = len(word);
+      };
+    };
+    // move start to the next character after the space
+    start = i + 1;
+  };
+  
+  // if this is the last character, close out the last word
+  i{ i == len(str) - 1 ->
+    word = str[start : i];  // i is included!
+    i{ len(word) > min_frame_len ->
+      min_frame_len = len(word);
+    };
+  };
+};
+
+// total frame width inside the stars
+frame_inside_len = min_frame_len + (min_padding * 2);
+
+// ----------------------
+// SECOND PASS: print each word
+// ----------------------
+
+// first print the top border of the frame
+f{ i=0, i<frame_inside_len+2, i=i+1 -> print "*"; };
+print "\n";
+
+start = 0;
+f{ i=0, i<len(str), i=i+1 ->
+
+  // whenever we hit a space, print the word that just ended
+  i{ str[i] == " " ->
+    i{ i != start ->
+      word = str[start : i];
+      
+      // how many spaces do we need after the word to fill up frame_inside_len?
+      // We do a fixed left margin (min_padding), then fill the rest on the right.
+      left_spaces  = min_padding;
+      right_spaces = frame_inside_len - len(word) - left_spaces;
+      
+      // print the framed line
+      print "*";                // left star
+      f{ x=0, x<left_spaces, x=x+1 ->
+        print " ";
+      };
+      print word;
+      f{ x=0, x<right_spaces, x=x+1 ->
+        print " ";
+      };
+      print "*\n";             // right star + newline
+    };
+    start = i + 1;
+  };
+
+  // if it's the last character, print the final word
+  i{ i == len(str) - 1 ->
+    word = str[start : i];  // i is included!
+    
+    left_spaces  = min_padding;
+    right_spaces = frame_inside_len - len(word) - left_spaces;
+
+    print "*";
+    f{ x=0, x<left_spaces, x=x+1 ->
+      print " ";
+    };
+    print word;
+    f{ x=0, x<right_spaces, x=x+1 ->
+      print " ";
+    };
+    print "*\n";
+  };
+};
+
+// Then print the lower part of the frame, and we're done!
+f{ i=0, i<frame_inside_len+2, i=i+1 -> print "*"; };
+print "\n";

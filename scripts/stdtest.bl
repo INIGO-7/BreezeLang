@@ -2,60 +2,62 @@
 x = 0.5;
 y = 2.5;
 z = x + y;
-print z;
+print z, "\n";
 
-print x + y + z;
+print x + y + z, "\n";
 
 w = y - x;
-print w;
+print w, "\n";
 
 a = x * y;
-print a;
+print a, "\n";
 
 b = y / x;
-print b;
+print b, "\n";
 
 test = 0;
 test = test + 1;
-print test;
+print test, "\n";
 
 unary = -1;
-print unary;
+print unary, "\n";
 
 /* boolean operations */
 is_true = true;
 is_false = false;
-print "The following 4 should be: true, false, true, false";
-print is_true;
-print is_false;
-print 1 == 1;
-print 1 == 0;
+print "The following 4 should be: true, false, true, false", "\n";
+print is_true, "\n";
+print is_false, "\n";
+print 1 == 1, "\n";
+print 1 == 0, "\n";
 
-print "The following 3 should be: false, true, false";
+print "The following 3 should be: false, true, false", "\n";
 
-print is_true && is_false;
+print is_true && is_false, "\n";
 
 or_result = is_true || is_false;
-print or_result;
+print or_result, "\n";
 
 not_result = !is_true;
-print not_result;
+print not_result, "\n";
 
 /* complex boolean operations */
-print "The following 4 should be: true, true, true, true";
+print "The following 4 should be: true, true, true, true", "\n";
 complex_bool = (x < y) && (z > y);
-print complex_bool;
+print complex_bool, "\n";
 
 another_bool = (x == 0.5) || (y == 0);
-print another_bool;
+print another_bool, "\n";
 
 mixed_result = (z > 1) && is_true;
-print mixed_result;
+print mixed_result, "\n";
 
 edge_case = (y / 0.5 == 5.0) && (! is_false);
-print edge_case;
+print edge_case, "\n";
 
 /* Strings */
-print "Hello world!";
+print "Hello world!\n";
 str_var = "This is my first string variable";
-print str_var;
+print str_var, "\n";
+print "This is the length of the string:\n";
+print len(str_var), "\n";
