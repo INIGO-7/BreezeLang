@@ -18,7 +18,7 @@ BreezeLang is a programming language inspired by the features I cherish most fro
 
 ## Overview
 
-This language is designed to be concise and **C-like** in its syntax but offers unique constructs for loops (`w{}`, `f{}`), if-statements (`i{}`, `e{}`, `ie{}`), and function definitions (`d myFunc() -> ... }`). Internally, the language uses:
+This language is designed to be concise and **C-like** in its syntax but offers unique constructs for loops (`w{}`, `f{}`), if-statements (`i{}`, `e{}`, `ie{}`), and function definitions (`d{ myFunc() -> ... }`). Internally, the language uses:
 
 - A **flex-based** scanner to convert source code into tokens.
 - A **bison-based** parser that builds an **Abstract Syntax Tree (AST)**.
@@ -28,10 +28,10 @@ This language is designed to be concise and **C-like** in its syntax but offers 
 ## Features
 
 1. **Data Types**:  
-   - **Integer**: `int x = 5;`  
-   - **Float**: `float y = 3.14;`  
-   - **Boolean**: `true` / `false`  
-   - **String**: `"Hello World"` with support for escape sequences like `\n`, `\t`.
+   - **Integer**: `x = 5;`  
+   - **Float**: `y = 3.14;`  
+   - **Boolean**: `b = true` or `false`  
+   - **String**: `str = "Hello World"` with support for escape sequences like `\n`, `\t`.
 
 2. **Arithmetic & Expressions**:  
    - `+`, `-`, `*`, `/`, `**` (exponentiation)  
@@ -40,15 +40,15 @@ This language is designed to be concise and **C-like** in its syntax but offers 
 
 3. **Control Flow**:  
    - **If**: `i{ condition -> ... }`  
-   - **Else**: `e{ ... }`  
+   - **Else**: `e{ -> ... }`  
    - **While**: `w{ condition -> ... }`  
    - **For**: `f{ init, condition, update -> ... }`  
    - **Break / Continue** for loops.
 
 4. **Functions**:  
-   - Defined with `d funcName(param1, param2) -> ... }`.  
+   - Defined with `d{ funcName(param1, param2) -> ... }`.  
    - Local (function-level) scoping: each function call pushes a new scope.  
-   - Return values via `return expr;`.
+   - Return values via `return ...;`.
 
 5. **Input/Output**:  
    - **`print`** to output values or strings.  
@@ -82,7 +82,7 @@ print "Result: ", z;  // Result: 13.14
 
 ```c
 f{ i=0, i<5, i=i+1 ->
-  print "Loop iteration: ", i;
+  print "Loop iteration: ", i, "\n;
 }
 ```
 This “for” loop has an initialization (`i=0`), condition (`i<5`), and update (`i=i+1`) separated by commas.
@@ -100,14 +100,10 @@ e{ ->
 ### 5. Functions with Local Scope
 
 ```c
-// Function definition: sum(a, b)
-d sum(a, b) ->
+d{ sum(a, b) ->
   return a + b;
 }
-
-// Main code
-res = sum(3, 7);
-print "sum(3,7) = ", res;  // sum(3,7) = 10
+print "sum(3,7) = ", sum(3,7);  // = 10
 ```
 Local variables `a` and `b` are confined to the function’s scope and do not overwrite global variables.
 
@@ -118,6 +114,15 @@ what? -> username;
 print "Your name is ", username;
 ```
 
+### 7. Slicing and String length check
+```c
+str = "Hello world!"
+slice = str[6 : 11];
+
+// Prints "world!" with length of 6
+print "Here's your desired slice: '", slice, "' of length: ", len(slice), "\n";
+```
+
 ## Project Structure
 
 - **lexer.l**: Lexical analyzer (flex). Defines tokens (keywords, operators, literals).  
@@ -126,19 +131,19 @@ print "Your name is ", username;
 - **scope.c** & **scope.h**: Manages function-level scoping with push/pop operations and symbol lookups.  
 - **common_lib.h**: Shared includes or utility definitions.  
 - **symtab.h**: Definitions for `SymbolNode`, `ValueType`, etc. (No longer storing a single global symbol table—migrated to scope.c).  
-- **Makefile**: Builds the entire project (if you use a Makefile).
+- **Makefile**: Builds and manages the entire project.
 
 ## Build and Run
 
 1. **Install Dependencies**  
-   Ensure you have Flex, Bison, and a C compiler installed on your system (e.g., `gcc` or `clang`).
+   Ensure you have Flex, Bison, Make, and a C compiler installed on your system (e.g., `gcc` or `clang`).
 
 2. **Compile**  
-   If a Makefile is provided, simply run:
+   Simply run:
    ```bash
    make
    ```
-   This should invoke `flex`, `bison`, and the C compiler, producing an executable (e.g. `lang` or `parser`).
+   This should invoke `flex`, `bison`, and the C compiler, producing an executable (`BreezeCompiler`).
 
 3. **Run**  
    ```bash
