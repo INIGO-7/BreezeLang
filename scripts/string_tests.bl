@@ -1,4 +1,4 @@
-print "hello", "world\n", "!!!!!!!!!!";
-test_str = "iniguito";
+what? -> user_prompt;
+slice = user_prompt[6 : 11];
 
-print len(test_str);
+print "Here's your desired slice: '", slice, "' of length: ", len(slice), "\n";

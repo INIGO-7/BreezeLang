@@ -1,22 +1,22 @@
 x = 0;
-w[ x < 5 -> 
+w{ x < 5 -> 
     x = x + 1;
-];
+};
 
-print "Has test one passed:";
-print x == 5; // This has to be true
+// x == 5 has to be true
+print "Has test one passed: ", x == 5, "\n";
 
 y = true;
-w[ y ->
+w{ y ->
   y = false;
-];
+};
 
-print "Has test two passed:";
-print !y; // This has to be true
+// !y has to be true
+print "Has test two passed: ", !y, "\n";
 
-f[ z=1,z<5,z=z+1 ->
-  print z;
-];
+f{ z=1,z<25,z=z+1 ->
+  print z, " ";
+};
 
-print "Has test three passed:";
-print z == 5; // This has to be true
+// z == 25 has to be true
+print "\nHas test three passed: ", z == 25, "\n";

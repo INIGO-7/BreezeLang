@@ -7,10 +7,9 @@ d{ square_or_sum(a, is_squared) ->
   return a;
 };
 
-print "if is_squared is true, a = 9. If not, a = 4. is_squared:";
 is_sq = true;
-print is_sq;
 b = 3;
-print "a's value:";
+print "if is_squared is true, a = 9. If not, a = 4. is_squared: ", is_sq, "\n";
+
 c = square_or_sum(b, is_sq);
-print c;
+print "a's value: ", c, "\n";

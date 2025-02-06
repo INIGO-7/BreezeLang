@@ -1,21 +1,19 @@
-numDisks = 3;
-control = false;
-
 d{ tower(n, fromPeg, toPeg, auxPeg) ->
   i{ n == 1 ->
     // Base case: move just one disk
-    print "Move disk from ", fromPeg, " to ", toPeg, "\n";
-    control = true;
-  };
-  i{ !control ->
+    print "Moved disk from ", fromPeg, " to ", toPeg, "\n";
+
+  e{ ->
     // Move top n-1 disks from 'fromPeg' to 'auxPeg'
     tower(n - 1, fromPeg, auxPeg, toPeg);
+
     // Move the largest disk
-    print "Move disk from ", fromPeg, " to ", toPeg, "\n";
+    print "Moved disk from ", fromPeg, " to ", toPeg, "\n";
+
     // Move the n-1 disks from 'auxPeg' to 'toPeg'
-    control = false;
     tower(n - 1, auxPeg, toPeg, fromPeg);
+
   };
 };
 
-tower(numDisks, "A", "C", "B");
+tower(7, "A", "C", "B");
