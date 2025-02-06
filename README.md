@@ -185,11 +185,5 @@ print "Here's your desired slice: '", slice, "' of length: ", len(slice), "\n";
 This project is open-source under the MIT License. See `LICENSE` for details.
 
 ### Thanks for Visiting!
-
-<p align="center">
-  <i>
-     This has been my final project proposal for the "Compiler Construction" course when studying in Germany, at [OTH REGENSBURG](https://www.oth-regensburg.de/en/)
-     At the moment there are no plans to resume work, if work is resumed this README will be duly updated.
-  </i>
-</p>
-
+_This has been my final project proposal for the "Compiler Construction" course when studying in Germany, at [OTH REGENSBURG](https://www.oth-regensburg.de/en/). 
+At the moment there are no plans to resume work, if work is resumed this README will be duly updated._
